@@ -248,29 +248,43 @@ body {
     justify-content: center;
   }
 
-  /* Floating Buttons */
+  /* Floating Buttons — Liquid Glass */
   .mobile-tray-toggle,
   .mobile-copy-btn {
     display: flex;
     flex: 1;
-    background: var(--primary);
+    background: rgba(90, 28, 219, 0.65);
     color: white;
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.4);
     padding: 0.8rem 1rem;
     border-radius: 50px;
     font-weight: 700;
     font-family: inherit;
     font-size: 0.9rem;
-    box-shadow: 0 4px 15px rgba(90, 28, 219, 0.4);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     align-items: center;
     gap: 0.5rem;
     cursor: pointer;
     justify-content: center;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    transition: all 0.2s ease;
   }
 
   .mobile-copy-btn {
-    background: #0ac75b;
-    box-shadow: 0 4px 15px rgba(10, 199, 91, 0.4);
+    background: rgba(10, 199, 91, 0.7);
+    flex: 0 0 52px;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  .mobile-tray-toggle:active,
+  .mobile-copy-btn:active {
+    transform: scale(0.97);
+    filter: brightness(1.1);
   }
 
   /* Dark Overlay when Tray is open */

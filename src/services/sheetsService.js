@@ -38,10 +38,11 @@ const fetchSheetTab = async (sheetName) => {
       });
       // Normalize key-matching fields to strings to avoid type mismatches
       // (gviz may return numeric columns like secundagem as JS numbers)
+      // Also trim whitespace to handle entries like "BEM ESTAR " vs "BEM ESTAR"
       const KEY_FIELDS = ['programa', 'praca', 'secundagem'];
       KEY_FIELDS.forEach(k => {
         if (rowData[k] !== null && rowData[k] !== undefined) {
-          rowData[k] = String(rowData[k]);
+          rowData[k] = String(rowData[k]).trim();
         }
       });
       return rowData;

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Download, Settings2, X, Copy, Check } from 'lucide-react';
+import { Download, Settings2, X, Copy, Check, Camera } from 'lucide-react';
 import { fetchAllSheetData } from './services/sheetsService';
 import CardPreview from './components/CardPreview';
 
@@ -167,7 +167,7 @@ function App() {
     Praca: curValor.praca || 'Selecione',
     Horario: curProg.horario || curProg.horário || '--:--',
     Dias: curProg.dias || '---',
-    InsercoesTV: insercoesTvProg,
+    InsercoesTV: qtdVinhetas * insercoesTvProg,
     VisualizacoesMes: formatMoney(visualizacoesMesCalc),
     PrecoBaseMensal: precoBaseCalculado,
     // For observations logic
@@ -178,8 +178,18 @@ function App() {
   };
 
   // Derived arrays for dropdowns
-  const programasOptions = db.programas.map(p => p.programa).filter(Boolean);
-  const pracasOptions = db.valores.filter(v => v.programa === selectedPrograma).map(v => v.praca).filter(Boolean);
+  // Source programs from the valores table so any program with pricing appears,
+  // even if it hasn't been added to the programas sheet yet.
+  const programasOptions = [...new Set(
+    db.valores
+      .filter(v => v.valor_base !== null && v.valor_base !== undefined && String(v.valor_base).trim() !== '')
+      .map(v => v.programa)
+      .filter(Boolean)
+  )];
+  const pracasOptions = db.valores
+    .filter(v => v.programa === selectedPrograma && v.valor_base !== null && v.valor_base !== undefined && String(v.valor_base).trim() !== '')
+    .map(v => v.praca)
+    .filter(Boolean);
   const patrociniosOptions = db.patrocinios.filter(p => p.programa === selectedPrograma).map(p => p.secundagem).filter(Boolean);
 
   return (
@@ -272,7 +282,7 @@ function App() {
 
         <h3 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Observações Extras</h3>
 
-        <div className="checkbox-group">
+        <div className="checkbox-group" style={{ paddingBottom: '2rem' }}>
           <input
             type="checkbox"
             id="g1"
@@ -281,23 +291,12 @@ function App() {
             onChange={(e) => setVeiculacaoG1(e.target.checked)}
           />
           <label htmlFor="g1" style={{ opacity: temDigital ? 1 : 0.5 }}>
-            Incluir linha de Veiculação G1 GO (30 dias)
+            ADICIONAR VEICULAÇÃO DIGITAL NO PATROCÍNIO (30 DIAS)
             {!temDigital && " (Indisponível)"}
           </label>
         </div>
 
-        {/* Exibe alguns dados de debug para ajudar a ver se as tabelas vieram certas */}
-        <div style={{ marginTop: '2rem', fontSize: '0.7rem', color: '#888', background: '#f0f0f0', padding: '1rem', borderRadius: '4px' }}>
-          <strong>Debug INFO:</strong><br />
-          Audiência: {audiencia}<br />
-          Inserções (Prog): {insercoesTvProg}<br />
-          Inserções (Patrocinio): {insercoesTvPat}<br />
-          Qtd Vinhetas: {qtdVinhetas}<br />
-          Valor Base: {valorBase}<br />
-          Coeficiente TV: {coeficienteTv}<br />
-          Coeficiente DIG: {temDigital ? coeficienteDig : 'N/A'}<br />
-          Total Final Renderizado: {precoBaseCalculado}
-        </div>
+
 
       </aside>
 
@@ -313,36 +312,21 @@ function App() {
           </div>
         </div>
 
-        <div className="action-buttons-wrapper">
-          <button
-            className="btn-primary"
-            onClick={handleCopyImage}
-            style={{ backgroundColor: isCopied ? '#0ac75b' : 'var(--primary)', width: '100%', maxWidth: '300px' }}
-          >
-            {isCopied ? (
-              <><Check size={20} /> Copiado para colar!</>
-            ) : (
-              <><Copy size={20} /> Copiar Imagem</>
-            )}
-          </button>
-        </div>
+
 
         {/* Floating Actions for Mobile */}
         <div className="mobile-floating-actions">
           <button className="mobile-tray-toggle" onClick={() => setIsMobileTrayOpen(true)}>
-            <Settings2 size={24} /> Editar
+            <Settings2 size={24} /> Editar Card
           </button>
 
           <button
             className="mobile-copy-btn"
             onClick={handleCopyImage}
-            style={{ backgroundColor: isCopied ? '#0ac75b' : '' }}
+            style={{ backgroundColor: isCopied ? 'rgba(10,199,91,0.85)' : '' }}
+            title="Copiar Imagem"
           >
-            {isCopied ? (
-              <><Check size={20} /> Copiado!</>
-            ) : (
-              <><Copy size={20} /> Copiar Imagem</>
-            )}
+            {isCopied ? <Check size={22} /> : <Camera size={22} />}
           </button>
         </div>
       </main>

@@ -24,6 +24,8 @@ const CardPreview = ({ data, cards, veiculacaoG1 }) => {
     const qtd = rules.qtdVinhetas || 0;
 
     let palavras = 0;
+    if (secs === 15) palavras = 12;
+    if (secs === 10) palavras = 12;
     if (secs === 7) palavras = 12;
     if (secs === 5) palavras = 10;
     if (secs === 3) palavras = 4;
@@ -51,6 +53,7 @@ const CardPreview = ({ data, cards, veiculacaoG1 }) => {
             backgroundColor: '#ffffff',
             display: 'flex',
             flexDirection: 'column',
+            justifyContent: 'center',
             position: 'relative',
             overflow: 'hidden',
             padding: '2.5rem 2rem',
@@ -79,33 +82,34 @@ const CardPreview = ({ data, cards, veiculacaoG1 }) => {
                 <div>DIAS: <span style={{ fontWeight: 400 }}>{data.Dias}</span></div>
                 <div>INSERÇÕES/MÊS TV: <span style={{ fontWeight: 400 }}>{data.InsercoesTV}</span></div>
                 {veiculacaoG1 && (
-                    <div>DIAS DE VEICULAÇÃO G1 GO/MÊS TV: <span style={{ fontWeight: 400 }}>30</span></div>
+                    <div>DIAS DE VEICULAÇÃO DIGITAL/MÊS: <span style={{ fontWeight: 400 }}>30</span></div>
                 )}
             </div>
 
-            {/* Views Banner */}
-            <div style={{
-                backgroundColor: 'var(--success)',
-                color: 'white',
-                textAlign: 'center',
-                padding: '0.8rem',
-                borderRadius: '8px',
-                fontSize: '1.6rem',
-                fontWeight: 800,
-                boxShadow: '0 8px 20px rgba(10, 199, 91, 0.3)',
-                marginBottom: '2rem',
-                textTransform: 'lowercase'
-            }}>
-                {data.VisualizacoesMes} visualizações/mês*
-            </div>
+            {/* Views Banner — só exibe quando há dados de audiência */}
+            {data.VisualizacoesMes && data.VisualizacoesMes !== '0' && (
+                <div style={{
+                    backgroundColor: 'var(--success)',
+                    color: 'white',
+                    textAlign: 'center',
+                    padding: '0.8rem',
+                    borderRadius: '8px',
+                    fontSize: '1.6rem',
+                    fontWeight: 800,
+                    boxShadow: '0 8px 20px rgba(10, 199, 91, 0.3)',
+                    marginBottom: '2rem',
+                    textTransform: 'lowercase'
+                }}>
+                    {data.VisualizacoesMes} visualizações/mês*
+                </div>
+            )}
 
             {/* Pricing Cards */}
             <div style={{
                 display: 'flex',
                 gap: '0.8rem',
                 justifyContent: 'space-between',
-                flex: 1,
-                marginBottom: '1rem' // Space for overflowing badges
+                marginBottom: '1.5rem'
             }}>
                 {cards.map((card, i) => {
                     const discountedPrice = calculatePrice(data.PrecoBaseMensal, card.descontoPercent || 0);
@@ -113,6 +117,7 @@ const CardPreview = ({ data, cards, veiculacaoG1 }) => {
                     return (
                         <div key={i} style={{
                             flex: 1,
+                            height: '255px',
                             display: 'flex',
                             flexDirection: 'column',
                             borderRadius: '8px',
@@ -136,7 +141,7 @@ const CardPreview = ({ data, cards, veiculacaoG1 }) => {
 
                             {/* Card Body */}
                             <div style={{
-                                padding: '1.5rem 0.5rem',
+                                padding: '0.5rem',
                                 textAlign: 'center',
                                 color: 'white',
                                 display: 'flex',
@@ -147,7 +152,7 @@ const CardPreview = ({ data, cards, veiculacaoG1 }) => {
                             }}>
                                 <div style={{ fontSize: '1rem', fontWeight: 400, lineHeight: 1 }}>de</div>
                                 <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>{formatMoney(data.PrecoBaseMensal)}/mês</div>
-                                <div style={{ fontSize: '1rem', fontWeight: 400, marginBottom: '0.5rem' }}>por</div>
+                                <div style={{ fontSize: '1rem', fontWeight: 400 }}>por</div>
 
                                 <div style={{ fontSize: '2.5rem', fontWeight: 800, lineHeight: 1 }}>
                                     {formatMoney(discountedPrice)}
@@ -180,7 +185,7 @@ const CardPreview = ({ data, cards, veiculacaoG1 }) => {
             </div>
 
             {/* Observations Footer */}
-            <div style={{ marginTop: '2rem', marginBottom: '1rem', padding: '0 1rem' }}>
+            <div style={{ marginTop: '2rem', padding: '0 1rem' }}>
                 <ul style={{
                     margin: 0,
                     padding: 0,
@@ -196,16 +201,14 @@ const CardPreview = ({ data, cards, veiculacaoG1 }) => {
                         </li>
                     ))}
                 </ul>
-            </div>
-
-            <div style={{
-                textAlign: 'center',
-                fontSize: '0.65rem',
-                color: '#666',
-                marginTop: 'auto',
-                fontWeight: 400
-            }}>
-                * audiência estimada com base em dados de 2025
+                <div style={{
+                    fontSize: '0.65rem',
+                    color: '#666',
+                    fontWeight: 400,
+                    marginTop: '0.5rem'
+                }}>
+                    * audiência estimada com base em dados de 2025
+                </div>
             </div>
 
         </div>
