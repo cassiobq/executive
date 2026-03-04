@@ -1,0 +1,299 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:ital,wght@0,300;0,400;0,600;0,700;0,800;1,400;1,600;1,800&display=swap');
+
+:root {
+  --primary: #5a1cdb;
+  /* Vibrant purple from the screenshot */
+  --secondary: #ffe100;
+  /* Vibrant yellow from the screenshot */
+  --success: #0ac75b;
+  /* Green for views */
+  --text-dark: #1e1e1e;
+  --text-light: #ffffff;
+  --text-muted: #666666;
+  --bg-app: #f4f5f9;
+  --bg-card: #ffffff;
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-app);
+  color: var(--text-dark);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* App Layout */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.sidebar {
+  width: 400px;
+  background-color: white;
+  padding: 2rem;
+  overflow-y: auto;
+  box-shadow: var(--shadow-sm);
+  z-index: 10;
+  border-right: 1px solid #eaeaea;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  background-color: #e9ecf2;
+}
+
+/* Form Styles */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-dark);
+  font-size: 0.9rem;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(90, 28, 219, 0.1);
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.checkbox-group input {
+  width: 1.2rem;
+  height: 1.2rem;
+  cursor: pointer;
+}
+
+.checkbox-group label {
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
+.card-settings {
+  background: #f8f9fc;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #e2e8f0;
+}
+
+.card-settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+  width: 100%;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  background-color: #4815b5;
+}
+
+/* Typography utilities */
+.text-primary {
+  color: var(--primary);
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.font-italic {
+  font-style: italic;
+}
+
+/* --- Mobile Bottom Sheet Utilities --- */
+.mobile-tray-toggle,
+.mobile-overlay,
+.sidebar-header-mobile,
+.close-tray-btn {
+  display: none;
+}
+
+.action-buttons-wrapper {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+
+  .main-content {
+    padding: 1rem;
+    justify-content: flex-start;
+    padding-bottom: 90px;
+    /* Space for the floating button */
+  }
+
+  /* Scale the 450px wide card to fit iPhones */
+  .preview-scale-wrapper {
+    transform: scale(0.72);
+    transform-origin: top center;
+    margin-bottom: -150px;
+    /* Offset the physical space left by the scaled down component */
+  }
+
+  .action-buttons-wrapper {
+    flex-direction: column;
+    padding-top: 1rem;
+  }
+
+  /* Bottom Tray Base Styles */
+  .sidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 85vh;
+    max-height: 85vh;
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    z-index: 1000;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 1.5rem;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
+  }
+
+  .sidebar.open {
+    transform: translateY(0);
+  }
+
+  .sidebar-header-mobile {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .close-tray-btn {
+    display: flex;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 50%;
+    padding: 0.5rem;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Floating Actions Wrapper */
+  .mobile-floating-actions {
+    display: flex;
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    gap: 0.5rem;
+    z-index: 100;
+    width: 90%;
+    max-width: 400px;
+    justify-content: center;
+  }
+
+  /* Floating Buttons */
+  .mobile-tray-toggle,
+  .mobile-copy-btn {
+    display: flex;
+    flex: 1;
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.8rem 1rem;
+    border-radius: 50px;
+    font-weight: 700;
+    font-family: inherit;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 15px rgba(90, 28, 219, 0.4);
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    justify-content: center;
+  }
+
+  .mobile-copy-btn {
+    background: #0ac75b;
+    box-shadow: 0 4px 15px rgba(10, 199, 91, 0.4);
+  }
+
+  /* Dark Overlay when Tray is open */
+  .mobile-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    backdrop-filter: blur(2px);
+    animation: fadeIn 0.3s forwards;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
