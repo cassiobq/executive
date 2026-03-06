@@ -22,7 +22,7 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   // Database State
-  const [db, setDb] = useState({ programas: [], valores: [], patrocinios: [] });
+  const [db, setDb] = useState({ programas: [], patrocinios: [] });
 
   // Form State
   const [selectedPrograma, setSelectedPrograma] = useState('');
@@ -41,19 +41,32 @@ function App() {
 
   const cardRef = useRef(null);
 
+  // Praças disponíveis como colunas na aba programas
+  const PRACAS = [
+    { key: 'goiania', label: 'GOIÂNIA' },
+    { key: 'anapolis', label: 'ANÁPOLIS' },
+    { key: 'rio_verde', label: 'RIO VERDE' },
+    { key: 'luziania', label: 'LUZIĂNIA' },
+    { key: 'itumbiara', label: 'ITUMBIARA' },
+    { key: 'catalao', label: 'CATALÃO' },
+    { key: 'porangatu', label: 'PORANGATU' },
+    { key: 'jatai', label: 'JATAÍ' },
+  ];
+
   useEffect(() => {
     setLoading(true);
     fetchAllSheetData().then(res => {
       setDb(res);
-      if (res.programas && res.programas.length > 0) {
-        const firstProg = res.programas[0].programa;
+      if (res.patrocinios && res.patrocinios.length > 0) {
+        const firstProg = res.patrocinios[0].programa;
         setSelectedPrograma(firstProg);
 
-        const pValores = res.valores.filter(v => v.programa === firstProg);
-        if (pValores.length > 0) setSelectedPraca(pValores[0].praca);
+        // First valid praça for this program
+        const progData = res.programas.find(p => String(p.programa).trim() === String(firstProg).trim()) || {};
+        const firstPraca = PRACAS.find(pr => progData[pr.key] !== null && progData[pr.key] !== undefined && String(progData[pr.key]).trim() !== '');
+        if (firstPraca) setSelectedPraca(firstPraca.key);
 
-        const pPatrocinios = res.patrocinios.filter(p => p.programa === firstProg);
-        if (pPatrocinios.length > 0) setSelectedPatrocinio(pPatrocinios[0].secundagem);
+        setSelectedPatrocinio(res.patrocinios[0].secundagem);
       }
       setLoading(false);
     });
@@ -73,9 +86,10 @@ function App() {
   // Update Praça and Patrocinio when Programa changes
   useEffect(() => {
     if (selectedPrograma && db.programas.length > 0) {
-      const pValores = db.valores.filter(v => v.programa === selectedPrograma);
-      if (pValores.length > 0 && !pValores.map(v => v.praca).includes(selectedPraca)) {
-        setSelectedPraca(pValores[0].praca);
+      const progData = db.programas.find(p => String(p.programa).trim() === String(selectedPrograma).trim()) || {};
+      const validPracas = PRACAS.filter(pr => progData[pr.key] !== null && progData[pr.key] !== undefined && String(progData[pr.key]).trim() !== '');
+      if (validPracas.length > 0 && !validPracas.find(pr => pr.key === selectedPraca)) {
+        setSelectedPraca(validPracas[0].key);
       }
 
       const pPatrocinios = db.patrocinios.filter(p => p.programa === selectedPrograma);
@@ -116,21 +130,19 @@ function App() {
 
   // --- CALCULATIONS BASED ON SELECTED ITEMS --- //
 
-  const curProg = db.programas.find(p => String(p.programa) === String(selectedPrograma)) || {};
-  const curValor = db.valores.find(v => String(v.programa) === String(selectedPrograma) && String(v.praca) === String(selectedPraca)) || {};
+  const curProg = db.programas.find(p => String(p.programa).trim() === String(selectedPrograma).trim()) || {};
   const curPat = db.patrocinios.find(p => String(p.programa) === String(selectedPrograma) && String(p.secundagem) === String(selectedPatrocinio)) || {};
 
-  // 1. Inserções/mês TV = coluna insercoes_mes da sheet programas
+  // 1. Inserções/mês TV = programas.insercoes_mes
   const insercoesTvProg = parseNum(curProg.insercoes_mes);
 
-  // 2. Visualizações/mês = (programa.audiencia * programa.insercoes_mes) * patrocinios.qtd_vinhetas
-  const audiencia = parseNum(curProg.audiencia);
+  // 2. Visualizações/mês = audiencia_rvd * insercoes_mes * qtd_vinhetas
+  const audiencia = parseNum(curProg.audiencia_rvd);
   const qtdVinhetas = parseNum(curPat.qtd_vinhetas);
-  const visualizacoesMesCalc = (audiencia * insercoesTvProg) * qtdVinhetas;
+  const visualizacoesMesCalc = audiencia * insercoesTvProg * qtdVinhetas;
 
-  // 3. Valores dos cards = (valores.valor_base) * (Coeficiente) * (patrocinios.qtd_vinhetas) * (patrocinios.insercoes_mes)
-  // If patrocinios.insercoes_mes doesn't exist, we fallback to programas.insercoes_mes just in case.
-  const valorBase = parseNum(curValor.valor_base);
+  // 3. valor_base vem da coluna da praça selecionada dentro de programas
+  const valorBase = parseNum(curProg[selectedPraca]);
 
   // New Columns: coeficiente_tv and coeficiente_dig
   const coeficienteTv = parseNum(curPat.coeficiente_tv);
@@ -138,10 +150,8 @@ function App() {
   const coeficienteDig = parseNum(coeficienteDigRaw);
   const temDigital = coeficienteDigRaw !== undefined && coeficienteDigRaw !== '' && coeficienteDig > 0;
 
-  const insercoesTvPat = parseNum(curPat.insercoes_mes) || parseNum(curProg.insercoes_mes);
-
-  // Calcula Preço TV
-  const precoTv = valorBase * coeficienteTv * qtdVinhetas * insercoesTvPat;
+  // Calcula Preço TV = valor_base * coeficiente_tv * qtd_vinhetas * insercoes_mes
+  const precoTv = valorBase * coeficienteTv * qtdVinhetas * insercoesTvProg;
 
   // Calcula Preço Digital = precoTv * coeficiente_dig
   // Exemplo: precoTv=2370, coef_dig=0.1 → precoDig=237 → total=2607
@@ -162,15 +172,15 @@ function App() {
   }
 
   // Prepare data for CardPreview
+  const pracaLabel = PRACAS.find(pr => pr.key === selectedPraca)?.label || selectedPraca;
   const previewData = {
     Programa: curProg.programa || 'Selecione',
-    Praca: curValor.praca || 'Selecione',
-    Horario: curProg.horario || curProg.horário || '--:--',
+    Praca: pracaLabel,
+    Horario: curProg.horario || '--:--',
     Dias: curProg.dias || '---',
     InsercoesTV: qtdVinhetas * insercoesTvProg,
     VisualizacoesMes: formatMoney(visualizacoesMesCalc),
     PrecoBaseMensal: precoBaseCalculado,
-    // For observations logic
     PatrocinioRules: {
       qtdVinhetas,
       secundagemAsSeconds: extractSecs(curPat.secundagem)
@@ -178,18 +188,12 @@ function App() {
   };
 
   // Derived arrays for dropdowns
-  // Source programs from the valores table so any program with pricing appears,
-  // even if it hasn't been added to the programas sheet yet.
-  const programasOptions = [...new Set(
-    db.valores
-      .filter(v => v.valor_base !== null && v.valor_base !== undefined && String(v.valor_base).trim() !== '')
-      .map(v => v.programa)
-      .filter(Boolean)
-  )];
-  const pracasOptions = db.valores
-    .filter(v => v.programa === selectedPrograma && v.valor_base !== null && v.valor_base !== undefined && String(v.valor_base).trim() !== '')
-    .map(v => v.praca)
-    .filter(Boolean);
+  // Programas: todos que aparecem na aba patrocinios
+  const programasOptions = [...new Set(db.patrocinios.map(p => p.programa).filter(Boolean))];
+  // Praças: colunas de programas que têm valor não-vazio para o programa selecionado
+  const pracasOptions = PRACAS.filter(pr =>
+    curProg[pr.key] !== null && curProg[pr.key] !== undefined && String(curProg[pr.key]).trim() !== ''
+  );
   const patrociniosOptions = db.patrocinios.filter(p => p.programa === selectedPrograma).map(p => p.secundagem).filter(Boolean);
 
   return (
@@ -215,9 +219,11 @@ function App() {
             onChange={(e) => {
               const newProg = e.target.value;
               setSelectedPrograma(newProg);
-              // Reset Praça and Secundagem immediately to first valid option
-              const newPracas = db.valores.filter(v => v.programa === newProg);
-              if (newPracas.length > 0) setSelectedPraca(newPracas[0].praca);
+              // Reset Praça to first valid one for the new program
+              const progData = db.programas.find(p => String(p.programa).trim() === String(newProg).trim()) || {};
+              const firstPraca = PRACAS.find(pr => progData[pr.key] !== null && progData[pr.key] !== undefined && String(progData[pr.key]).trim() !== '');
+              if (firstPraca) setSelectedPraca(firstPraca.key);
+              // Reset Secundagem
               const newPats = db.patrocinios.filter(p => p.programa === newProg);
               if (newPats.length > 0) setSelectedPatrocinio(newPats[0].secundagem);
             }}
@@ -234,7 +240,7 @@ function App() {
             onChange={(e) => setSelectedPraca(e.target.value)}
           >
             {pracasOptions.length === 0 && <option value="">Sem praças</option>}
-            {pracasOptions.map(p => <option key={p} value={p}>{p}</option>)}
+            {pracasOptions.map(pr => <option key={pr.key} value={pr.key}>{pr.label}</option>)}
           </select>
         </div>
 
