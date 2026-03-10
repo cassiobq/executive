@@ -2,17 +2,13 @@
 
 :root {
   --primary: #5a1cdb;
-  /* Vibrant purple from the screenshot */
   --secondary: #ffe100;
-  /* Vibrant yellow from the screenshot */
   --success: #0ac75b;
-  /* Green for views */
   --text-dark: #1e1e1e;
   --text-light: #ffffff;
   --text-muted: #666666;
   --bg-app: #f4f5f9;
   --bg-card: #ffffff;
-
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.12);
 }
@@ -35,6 +31,12 @@ body {
   display: flex;
   min-height: 100vh;
   width: 100%;
+}
+
+/* Page wrapper: allow scrolling on desktop */
+.page-wrapper {
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .sidebar {
@@ -142,7 +144,7 @@ body {
   background-color: #4815b5;
 }
 
-/* Typography utilities */
+/* Typography */
 .text-primary {
   color: var(--primary);
 }
@@ -155,12 +157,18 @@ body {
   font-style: italic;
 }
 
-/* --- Mobile Bottom Sheet Utilities --- */
+/* --- Mobile: hidden by default --- */
 .mobile-tray-toggle,
 .mobile-overlay,
 .sidebar-header-mobile,
-.close-tray-btn {
+.close-tray-btn,
+.mobile-home-btn {
   display: none;
+}
+
+/* Hidden only on mobile */
+.desktop-only {
+  display: flex;
 }
 
 .action-buttons-wrapper {
@@ -170,46 +178,55 @@ body {
   justify-content: center;
 }
 
+/* ==============================
+   MOBILE LAYOUT
+   ============================== */
 @media (max-width: 768px) {
+
+  /* Lock the root so nothing triggers a page-level scroll */
+  html,
+  body {
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  /* Lock page wrapper — no scrolling on mobile */
+  .page-wrapper {
+    overflow: hidden;
+  }
+
+  /* Full-screen, no scroll — card fills viewport */
   .app-container {
     flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
   }
 
-  .main-content {
-    padding: 1rem;
-    justify-content: flex-start;
-    padding-bottom: 90px;
-    /* Space for the floating button */
+  /* Hide desktop-only elements (e.g. Início back button) in mobile tray */
+  .desktop-only {
+    display: none !important;
   }
 
-  /* Scale the 450px wide card to fit iPhones */
-  .preview-scale-wrapper {
-    transform: scale(0.72);
-    transform-origin: top center;
-    margin-bottom: -150px;
-    /* Offset the physical space left by the scaled down component */
-  }
-
-  .action-buttons-wrapper {
-    flex-direction: column;
-    padding-top: 1rem;
-  }
-
-  /* Bottom Tray Base Styles */
+  /* Hide desktop sidebar completely on mobile */
   .sidebar {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 85vh;
-    max-height: 85vh;
+    height: 85dvh;
+    max-height: 85dvh;
     border-top-left-radius: 24px;
     border-top-right-radius: 24px;
     z-index: 1000;
-    transform: translateY(100%);
+    /* Fully hidden below viewport — no peeking */
+    transform: translateY(110%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     padding: 1.5rem;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
     box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .sidebar.open {
@@ -234,26 +251,54 @@ body {
     justify-content: center;
   }
 
-  /* Floating Actions Wrapper */
+  /* Main content: full height minus floating buttons area */
+  .main-content {
+    flex: 1;
+    padding: 0;
+    padding-bottom: 88px;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background-color: #e9ecf2;
+  }
+
+  /* Scale the 450px card with 5px margin per side */
+  .preview-scale-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    transform: scale(0.80);
+    transform-origin: center center;
+    /* Allocate the correct height so surrounding flex doesn't collapse */
+    height: calc(450px * 1.778 * 0.80);
+  }
+
+  .action-buttons-wrapper {
+    flex-direction: column;
+    padding-top: 1rem;
+  }
+
+  /* Floating Actions Bar */
   .mobile-floating-actions {
     display: flex;
     position: fixed;
-    bottom: 24px;
+    bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
     gap: 0.5rem;
     z-index: 100;
-    width: 90%;
-    max-width: 400px;
+    width: 92%;
+    max-width: 420px;
     justify-content: center;
+    align-items: center;
   }
 
-  /* Floating Buttons — Liquid Glass */
-  .mobile-tray-toggle,
-  .mobile-copy-btn {
+  /* Liquid Glass buttons */
+  .mobile-tray-toggle {
     display: flex;
     flex: 1;
-    background: rgba(90, 28, 219, 0.65);
+    background: rgba(90, 28, 219, 0.72);
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.4);
     padding: 0.8rem 1rem;
@@ -273,21 +318,51 @@ body {
   }
 
   .mobile-copy-btn {
-    background: rgba(10, 199, 91, 0.7);
+    display: flex;
+    background: rgba(10, 199, 91, 0.75);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.4);
     flex: 0 0 52px;
     width: 52px;
     height: 52px;
     padding: 0;
     border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    transition: all 0.2s ease;
+  }
+
+  .mobile-home-btn {
+    display: flex;
+    background: rgba(10, 199, 91, 0.75);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    flex: 0 0 52px;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    transition: all 0.2s ease;
   }
 
   .mobile-tray-toggle:active,
-  .mobile-copy-btn:active {
-    transform: scale(0.97);
+  .mobile-copy-btn:active,
+  .mobile-home-btn:active {
+    transform: scale(0.95);
     filter: brightness(1.1);
   }
 
-  /* Dark Overlay when Tray is open */
+  /* Dark Overlay */
   .mobile-overlay {
     display: block;
     position: fixed;
@@ -309,5 +384,19 @@ body {
 
   to {
     opacity: 1;
+  }
+}
+
+@keyframes cameraFlash {
+  0% {
+    opacity: 0.95;
+  }
+
+  40% {
+    opacity: 0.7;
+  }
+
+  100% {
+    opacity: 0;
   }
 }

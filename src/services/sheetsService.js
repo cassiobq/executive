@@ -33,7 +33,16 @@ const fetchSheetTab = async (sheetName) => {
       const rowData = {};
       row.c.forEach((cell, i) => {
         if (cols[i]) {
-          rowData[cols[i]] = cell ? cell.v : null;
+          let val = cell ? cell.v : null;
+          // gviz retorna colunas de hora como string "Date(ano,mes,dia,HH,MM,SS)"
+          if (typeof val === 'string' && val.startsWith('Date(')) {
+            const parts = val.replace('Date(', '').replace(')', '').split(',').map(Number);
+            // parts: [year, month, day, hours, minutes, seconds]
+            val = `${String(parts[3]).padStart(2, '0')}:${String(parts[4]).padStart(2, '0')}`;
+          } else if (val instanceof Date) {
+            val = `${String(val.getHours()).padStart(2, '0')}:${String(val.getMinutes()).padStart(2, '0')}`;
+          }
+          rowData[cols[i]] = val;
         }
       });
       // Normaliza campos-chave para string e remove espaços extras
@@ -55,12 +64,23 @@ const fetchSheetTab = async (sheetName) => {
 
 export const fetchAllSheetData = async () => {
   try {
-    const [programas, patrocinios] = await Promise.all([
+    const [programas, patrocinios, valores] = await Promise.all([
       fetchSheetTab('programas'),
-      fetchSheetTab('patrocinios')
+      fetchSheetTab('patrocinios'),
+      fetchSheetTab('valores')
     ]);
 
-    return { programas, patrocinios };
+    // Merge 'valores' into 'programas' matching by 'programa'
+    const mergedProgramas = programas.map(prog => {
+      if (!prog.programa) return prog;
+      const valMatch = valores.find(v => v.programa === prog.programa);
+      if (valMatch) {
+        return { ...prog, ...valMatch };
+      }
+      return prog;
+    });
+
+    return { programas: mergedProgramas, patrocinios };
   } catch (error) {
     console.error("Erro fatal ao fazer fetch das abas:", error);
     return { programas: [], patrocinios: [] };

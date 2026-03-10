@@ -15,6 +15,10 @@ const formatMoney = (val) => {
 
 const CardPreview = ({ data, cards, veiculacaoG1 }) => {
     if (!data) return null;
+    const visibleCards = cards;
+    const numVisibleCards = visibleCards.length;
+    // Font scale grows as fewer cards are shown (they're wider so text can be larger)
+    const fontScale = numVisibleCards === 1 ? 1.8 : numVisibleCards === 2 ? 1.35 : 1;
 
     // Logic for observations specified by user
     // Quantidade de vinhetas, secundagem escolhida
@@ -45,6 +49,9 @@ const CardPreview = ({ data, cards, veiculacaoG1 }) => {
 
     // 3rd Rule: frase de pagamento mantém a mesma
     obsLines.push('pagamento para dia 15 do próximo mês');
+
+    // 4th Rule: produção do VT — sempre presente
+    obsLines.push('Produção do VT deve ser cotada à parte com agência/produtora');
 
     return (
         <div className="card-wrapper" style={{
@@ -84,6 +91,12 @@ const CardPreview = ({ data, cards, veiculacaoG1 }) => {
                 {veiculacaoG1 && (
                     <div>DIAS DE VEICULAÇÃO DIGITAL/MÊS: <span style={{ fontWeight: 400 }}>30</span></div>
                 )}
+                {data.ShareRvd && (
+                    <div>AUDIÊNCIA ENTRE AS TV&apos;s: <span style={{ fontWeight: 400 }}>{data.ShareRvd}%</span></div>
+                )}
+                {data.PerfilRvd && (
+                    <div>PERFIL: <span style={{ fontWeight: 400 }}>{data.PerfilRvd}</span></div>
+                )}
             </div>
 
             {/* Views Banner — só exibe quando há dados de audiência */}
@@ -111,8 +124,18 @@ const CardPreview = ({ data, cards, veiculacaoG1 }) => {
                 justifyContent: 'space-between',
                 marginBottom: '1.5rem'
             }}>
-                {cards.map((card, i) => {
+                {visibleCards.map((card, i) => {
                     const discountedPrice = calculatePrice(data.PrecoBaseMensal, card.descontoPercent || 0);
+                    const priceStr = formatMoney(discountedPrice);
+                    const basePriceFontSize = priceStr.length >= 8 ? 1.5
+                        : priceStr.length >= 7 ? 1.8
+                            : priceStr.length >= 6 ? 2.1
+                                : 2.5;
+                    const priceFontSize = `${Math.min(basePriceFontSize * fontScale, 4)}rem`;
+                    // Header capped at 2-card scale (1.62rem) so 1-card looks same as 2-card header
+                    const headerFontSize = `${Math.min(1.2 * fontScale, 1.62)}rem`;
+                    const subFontSize = `${Math.min(1.1 * fontScale, 1.7)}rem`;
+                    const labelFontSize = `${Math.min(1.2 * fontScale, 1.8)}rem`;
 
                     return (
                         <div key={i} style={{
@@ -131,7 +154,7 @@ const CardPreview = ({ data, cards, veiculacaoG1 }) => {
                                 color: '#111',
                                 textAlign: 'center',
                                 padding: '0.8rem 0',
-                                fontSize: '1.2rem',
+                                fontSize: headerFontSize,
                                 fontWeight: 800,
                                 borderTopLeftRadius: '8px',
                                 borderTopRightRadius: '8px'
@@ -148,16 +171,37 @@ const CardPreview = ({ data, cards, veiculacaoG1 }) => {
                                 alignItems: 'center',
                                 flexDirection: 'column',
                                 justifyContent: 'center',
+                                gap: numVisibleCards === 1 ? '0.4rem' : '0.05rem',
                                 flex: 1
                             }}>
-                                <div style={{ fontSize: '1rem', fontWeight: 400, lineHeight: 1 }}>de</div>
-                                <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>{formatMoney(data.PrecoBaseMensal)}/mês</div>
-                                <div style={{ fontSize: '1rem', fontWeight: 400 }}>por</div>
-
-                                <div style={{ fontSize: '2.5rem', fontWeight: 800, lineHeight: 1 }}>
-                                    {formatMoney(discountedPrice)}
-                                </div>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 700 }}>/mês</div>
+                                {numVisibleCards === 1 ? (
+                                    /* Single card: 2 inline lines */
+                                    <>
+                                        {/* Line 1: "de X/mês por" — hidden (not removed) when no discount */}
+                                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35em', flexWrap: 'nowrap', fontSize: subFontSize, fontWeight: 400, visibility: card.descontoPercent > 0 ? 'visible' : 'hidden' }}>
+                                            <span>de</span>
+                                            <span style={{ fontWeight: 600 }}>{formatMoney(data.PrecoBaseMensal)}/mês</span>
+                                            <span>por</span>
+                                        </div>
+                                        {/* Line 2: "BIG_PRICE /mês" */}
+                                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.2em', flexWrap: 'nowrap' }}>
+                                            <span style={{ fontSize: priceFontSize, fontWeight: 800, lineHeight: 1 }}>{priceStr}</span>
+                                            <span style={{ fontSize: labelFontSize, fontWeight: 700 }}>/mês</span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    /* Multi-card: stacked layout */
+                                    <>
+                                        {/* de/por block: hidden when no discount to keep price aligned */}
+                                        <div style={{ visibility: card.descontoPercent > 0 ? 'visible' : 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.05rem' }}>
+                                            <div style={{ fontSize: `${Math.min(1 * fontScale, 1.4)}rem`, fontWeight: 400, lineHeight: 1 }}>de</div>
+                                            <div style={{ fontSize: subFontSize, fontWeight: 600 }}>{formatMoney(data.PrecoBaseMensal)}/mês</div>
+                                            <div style={{ fontSize: `${Math.min(1 * fontScale, 1.4)}rem`, fontWeight: 400 }}>por</div>
+                                        </div>
+                                        <div style={{ fontSize: priceFontSize, fontWeight: 800, lineHeight: 1 }}>{priceStr}</div>
+                                        <div style={{ fontSize: labelFontSize, fontWeight: 700 }}>/mês</div>
+                                    </>
+                                )}
                             </div>
 
                             {/* Discount Badge — só aparece quando há desconto */}
@@ -185,13 +229,13 @@ const CardPreview = ({ data, cards, veiculacaoG1 }) => {
             </div>
 
             {/* Observations Footer */}
-            <div style={{ marginTop: '2rem', padding: '0 1rem' }}>
+            <div style={{ marginTop: '1rem', padding: '0 1rem' }}>
                 <ul style={{
                     margin: 0,
                     padding: 0,
                     listStylePosition: 'inside',
                     color: 'var(--primary)',
-                    fontSize: '0.75rem',
+                    fontSize: '0.65rem',
                     fontWeight: 600,
                     fontFamily: "'Outfit', sans-serif"
                 }}>
@@ -201,14 +245,16 @@ const CardPreview = ({ data, cards, veiculacaoG1 }) => {
                         </li>
                     ))}
                 </ul>
-                <div style={{
-                    fontSize: '0.65rem',
-                    color: '#666',
-                    fontWeight: 400,
-                    marginTop: '0.5rem'
-                }}>
-                    * audiência estimada com base em dados de 2025
-                </div>
+                {data.VisualizacoesMes && data.VisualizacoesMes !== '0' && (
+                    <div style={{
+                        fontSize: '0.65rem',
+                        color: '#666',
+                        fontWeight: 400,
+                        marginTop: '0.5rem'
+                    }}>
+                        * audiência estimada com base em dados de 2025
+                    </div>
+                )}
             </div>
 
         </div>
