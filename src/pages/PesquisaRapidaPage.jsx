@@ -83,6 +83,7 @@ export default function PesquisaRapidaPage({ onBack }) {
         setSelectedProg(p);
         setBusca(`${p.sigla} — ${p.programa}`);
         setBuscaFocused(false);
+        setIsMobileTrayOpen(false);
     };
 
     const inputStyle = {
