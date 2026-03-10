@@ -1,0 +1,25 @@
+{
+  "name": "Executive Patrocínios",
+  "short_name": "Executive",
+  "description": "Gerador de cards de patrocínio",
+  "start_url": "/executive/",
+  "scope": "/executive/",
+  "display": "standalone",
+  "background_color": "#0d1b3e",
+  "theme_color": "#0d1b3e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/executive/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/executive/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
