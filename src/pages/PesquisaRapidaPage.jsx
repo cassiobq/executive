@@ -168,7 +168,7 @@ export default function PesquisaRapidaPage({ onBack }) {
                             value={busca}
                             style={{ ...inputStyle, paddingLeft: '2.5rem' }}
                             onChange={e => { setBusca(e.target.value); setSelectedProg(null); }}
-                            onFocus={() => setBuscaFocused(true)}
+                            onFocus={() => { setBusca(''); setSelectedProg(null); setBuscaFocused(true); }}
                             onBlur={() => setTimeout(() => setBuscaFocused(false), 200)}
                         />
                     </div>
