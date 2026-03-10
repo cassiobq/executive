@@ -41,6 +41,7 @@ export default function Home({ onNavigate }) {
             display: 'flex',
             flexDirection: 'column',
             fontFamily: "'Outfit', sans-serif",
+            marginBottom: '50px',
         }}>
 
             {/* Hero Header */}
