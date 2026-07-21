@@ -3,6 +3,7 @@ import Home from './pages/Home';
 import PatrocinioPage from './pages/PatrocinioPage';
 import MidiaAvulsaPage from './pages/MidiaAvulsaPage';
 import PesquisaRapidaPage from './pages/PesquisaRapidaPage';
+import OportunidadesPage from './pages/OportunidadesPage';
 
 const pageStyle = (visible) => ({
   position: 'absolute',
@@ -35,6 +36,9 @@ export default function App() {
       </div>
       <div style={pageStyle(page === 'pesquisa-rapida')} className="page-wrapper">
         <PesquisaRapidaPage onBack={() => setPage('home')} />
+      </div>
+      <div style={pageStyle(page === 'oportunidades')} className="page-wrapper">
+        <OportunidadesPage onBack={() => setPage('home')} />
       </div>
     </div>
   );

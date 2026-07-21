@@ -21,6 +21,15 @@ const features = [
         gradient: 'linear-gradient(135deg, #0ac75b 0%, #06d68a 100%)',
     },
     {
+        id: 'oportunidades',
+        icon: Sparkles,
+        title: 'Oportunidades',
+        description: 'Formatos especiais com incentivo de produção de vídeo e grade de mídia otimizada',
+        available: true,
+        color: '#a855f7',
+        gradient: 'linear-gradient(135deg, #a855f7 0%, #c084fc 100%)',
+    },
+    {
         id: 'pesquisa-rapida',
         icon: Search,
         title: 'Pesquisa Rápida',
