@@ -1,0 +1,698 @@
+[
+  {
+    "programa": "AUTO ESPORTE",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.5,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "BOM DIA PRAÇA",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "BOM DIA PRAÇA",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "BOM DIA PRAÇA",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "BOM DIA SÁB",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "BOM DIA SÁB",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "BOM DIA SÁB",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "ENCONTRO/BEM ESTAR",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 1.0,
+    "": null
+  },
+  {
+    "programa": "ENCONTRO/BEM ESTAR",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 1.0,
+    "": null
+  },
+  {
+    "programa": "VIVER SERTANEJO",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 1.0,
+    "": null
+  },
+  {
+    "programa": "VIVER SERTANEJO",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 1.0,
+    "": null
+  },
+  {
+    "programa": "VIVER SERTANEJO",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 1.0,
+    "": null
+  },
+  {
+    "programa": "CALDEIRÃO",
+    "secundagem": 15.0,
+    "coeficiente_tv": 0.75,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 1.0,
+    "": null
+  },
+  {
+    "programa": "É DE CASA",
+    "secundagem": 10.0,
+    "coeficiente_tv": 0.75,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 1.0,
+    "": null
+  },
+  {
+    "programa": "EM FAMÍLIA COM ELIANA",
+    "secundagem": 10.0,
+    "coeficiente_tv": 0.75,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 1.0,
+    "": null
+  },
+  {
+    "programa": "GLOBO ESPORTE",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": 0.15,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "GLOBO ESPORTE",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": 0.15,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "GLOBO ESPORTE",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": 0.15,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "GLOBO RURAL",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.5,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "GLOBO RURAL REPRISE",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.5,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "HORA UM",
+    "secundagem": 10.0,
+    "coeficiente_tv": 0.75,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 1.0,
+    "": null
+  },
+  {
+    "programa": "JORNAL HOJE",
+    "secundagem": 10.0,
+    "coeficiente_tv": 0.75,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 1.0,
+    "": null
+  },
+  {
+    "programa": "PRAÇA TV 1a EDIÇÃO",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "PRAÇA TV 1a EDIÇÃO",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "PRAÇA TV 1a EDIÇÃO",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "MAIS VOCÊ",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "MAIS VOCÊ",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "MAIS VOCÊ",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.3,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "NOVELA I (SEG/SEX)",
+    "secundagem": 10.0,
+    "coeficiente_tv": 0.75,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 1.0,
+    "": null
+  },
+  {
+    "programa": "NOVELA I (SÁB)",
+    "secundagem": 10.0,
+    "coeficiente_tv": 0.75,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 1.0,
+    "": null
+  },
+  {
+    "programa": "NOVELA II (SEG/SEX)",
+    "secundagem": 10.0,
+    "coeficiente_tv": 0.75,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 1.0,
+    "": null
+  },
+  {
+    "programa": "NOVELA II (SÁB)",
+    "secundagem": 10.0,
+    "coeficiente_tv": 0.75,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 1.0,
+    "": null
+  },
+  {
+    "programa": "NOVELA III (SEG/SEX)",
+    "secundagem": 10.0,
+    "coeficiente_tv": 0.75,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 1.0,
+    "": null
+  },
+  {
+    "programa": "NOVELA III (SÁB)",
+    "secundagem": 10.0,
+    "coeficiente_tv": 0.75,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 1.0,
+    "": null
+  },
+  {
+    "programa": "PRAÇA TV 2a EDIÇÃO (SEG/SEX)",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "PRAÇA TV 2a EDIÇÃO (SEG/SEX)",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "PRAÇA TV 2a EDIÇÃO (SEG/SEX)",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "PRAÇA TV 2a EDIÇÃO (SÁB)",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "PRAÇA TV 2a EDIÇÃO (SÁB)",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "PRAÇA TV 2a EDIÇÃO (SÁB)",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "GLOBO REPÓRTER",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "GLOBO REPÓRTER",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "GLOBO REPÓRTER",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "GLOBO REPÓRTER REPRISE",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "GLOBO REPÓRTER REPRISE",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "GLOBO REPÓRTER REPRISE",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "VALE A PENA VER DE NOVO",
+    "secundagem": 10.0,
+    "coeficiente_tv": 0.75,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "VALE A PENA VER DE NOVO",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "JORNAL DO CAMPO",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "JORNAL DO CAMPO",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "JORNAL DO CAMPO",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "NO BALAIO",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "NO BALAIO",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "NO BALAIO",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "PRATO DO DIA",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "PRATO DO DIA",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "PRATO DO DIA",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": 0.1,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "DOMINGÃO COM HUCK",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "DOMINGÃO COM HUCK",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "DOMINGÃO COM HUCK",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "ESPORTE ESPETACULAR",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "ESPORTE ESPETACULAR",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "ESPORTE ESPETACULAR",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "FANTÁSTICO",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "FANTÁSTICO",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "FANTÁSTICO",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "GLOBO REPÓRTER REPRISE",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "GLOBO REPÓRTER REPRISE",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "GLOBO REPÓRTER REPRISE",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "GLOBO REPÓRTER",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "GLOBO REPÓRTER",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "GLOBO REPÓRTER",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "JORNAL DA GLOBO",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "JORNAL DA GLOBO",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "JORNAL DA GLOBO",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "NOVELA DA TARDE - EDIÇÃO ESPECIAL",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "NOVELA DA TARDE - EDIÇÃO ESPECIAL",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "NOVELA DA TARDE - EDIÇÃO ESPECIAL",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "SESSÃO DA TARDE",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "SESSÃO DA TARDE",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "SESSÃO DA TARDE",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "TELA QUENTE",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "TELA QUENTE",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "TELA QUENTE",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "TEMPERATURA MÁXIMA",
+    "secundagem": 7.0,
+    "coeficiente_tv": 0.4,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "TEMPERATURA MÁXIMA",
+    "secundagem": 5.0,
+    "coeficiente_tv": 0.375,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  },
+  {
+    "programa": "TEMPERATURA MÁXIMA",
+    "secundagem": 3.0,
+    "coeficiente_tv": 0.25,
+    "coeficiente_dig": null,
+    "qtd_vinhetas": 2.0,
+    "": null
+  }
+]
