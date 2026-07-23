@@ -5,7 +5,8 @@
     "coeficiente_tv": 0.5,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "AUTO"
   },
   {
     "programa": "BOM DIA GOIÁS",
@@ -13,7 +14,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "BPRA"
   },
   {
     "programa": "BOM DIA GOIÁS",
@@ -21,7 +23,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "BPRA"
   },
   {
     "programa": "BOM DIA GOIÁS",
@@ -29,7 +32,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "BPRA"
   },
   {
     "programa": "BOM DIA SÁB",
@@ -37,7 +41,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "BOMS"
   },
   {
     "programa": "BOM DIA SÁB",
@@ -45,7 +50,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "BOMS"
   },
   {
     "programa": "BOM DIA SÁB",
@@ -53,7 +59,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "BOMS"
   },
   {
     "programa": "ENCONTRO/BEM ESTAR",
@@ -61,7 +68,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": null,
     "qtd_vinhetas": 1.0,
-    "": null
+    "": null,
+    "sigla": "ENCT"
   },
   {
     "programa": "ENCONTRO/BEM ESTAR",
@@ -69,7 +77,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": null,
     "qtd_vinhetas": 1.0,
-    "": null
+    "": null,
+    "sigla": "ENCT"
   },
   {
     "programa": "VIVER SERTANEJO",
@@ -77,7 +86,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": null,
     "qtd_vinhetas": 1.0,
-    "": null
+    "": null,
+    "sigla": "BSER"
   },
   {
     "programa": "VIVER SERTANEJO",
@@ -85,7 +95,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": null,
     "qtd_vinhetas": 1.0,
-    "": null
+    "": null,
+    "sigla": "BSER"
   },
   {
     "programa": "VIVER SERTANEJO",
@@ -93,7 +104,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": null,
     "qtd_vinhetas": 1.0,
-    "": null
+    "": null,
+    "sigla": "BSER"
   },
   {
     "programa": "CALDEIRÃO",
@@ -101,7 +113,8 @@
     "coeficiente_tv": 0.75,
     "coeficiente_dig": null,
     "qtd_vinhetas": 1.0,
-    "": null
+    "": null,
+    "sigla": "CALD"
   },
   {
     "programa": "É DE CASA",
@@ -109,7 +122,8 @@
     "coeficiente_tv": 0.75,
     "coeficiente_dig": null,
     "qtd_vinhetas": 1.0,
-    "": null
+    "": null,
+    "sigla": "CASA"
   },
   {
     "programa": "EM FAMÍLIA COM ELIANA",
@@ -117,7 +131,8 @@
     "coeficiente_tv": 0.75,
     "coeficiente_dig": null,
     "qtd_vinhetas": 1.0,
-    "": null
+    "": null,
+    "sigla": "ELIA"
   },
   {
     "programa": "GLOBO ESPORTE",
@@ -125,7 +140,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": 0.15,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "GESP"
   },
   {
     "programa": "GLOBO ESPORTE",
@@ -133,7 +149,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": 0.15,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "GESP"
   },
   {
     "programa": "GLOBO ESPORTE",
@@ -141,7 +158,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": 0.15,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "GESP"
   },
   {
     "programa": "GLOBO RURAL",
@@ -149,7 +167,8 @@
     "coeficiente_tv": 0.5,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "GRUD"
   },
   {
     "programa": "GLOBO RURAL REPRISE",
@@ -157,7 +176,8 @@
     "coeficiente_tv": 0.5,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "GRUR"
   },
   {
     "programa": "HORA UM",
@@ -165,7 +185,8 @@
     "coeficiente_tv": 0.75,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 1.0,
-    "": null
+    "": null,
+    "sigla": "HORA"
   },
   {
     "programa": "JORNAL HOJE",
@@ -173,7 +194,8 @@
     "coeficiente_tv": 0.75,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 1.0,
-    "": null
+    "": null,
+    "sigla": "JHOJ"
   },
   {
     "programa": "PRAÇA TV 1a EDIÇÃO",
@@ -181,7 +203,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "PTV1"
   },
   {
     "programa": "PRAÇA TV 1a EDIÇÃO",
@@ -189,7 +212,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "PTV1"
   },
   {
     "programa": "PRAÇA TV 1a EDIÇÃO",
@@ -197,7 +221,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "PTV1"
   },
   {
     "programa": "MAIS VOCÊ",
@@ -205,7 +230,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "MAVO"
   },
   {
     "programa": "MAIS VOCÊ",
@@ -213,7 +239,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "MAVO"
   },
   {
     "programa": "MAIS VOCÊ",
@@ -221,7 +248,8 @@
     "coeficiente_tv": 0.3,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "MAVO"
   },
   {
     "programa": "NOVELA I (SEG/SEX)",
@@ -229,7 +257,8 @@
     "coeficiente_tv": 0.75,
     "coeficiente_dig": null,
     "qtd_vinhetas": 1.0,
-    "": null
+    "": null,
+    "sigla": "N18H"
   },
   {
     "programa": "NOVELA I (SÁB)",
@@ -237,7 +266,8 @@
     "coeficiente_tv": 0.75,
     "coeficiente_dig": null,
     "qtd_vinhetas": 1.0,
-    "": null
+    "": null,
+    "sigla": "N18S"
   },
   {
     "programa": "NOVELA II (SEG/SEX)",
@@ -245,7 +275,8 @@
     "coeficiente_tv": 0.75,
     "coeficiente_dig": null,
     "qtd_vinhetas": 1.0,
-    "": null
+    "": null,
+    "sigla": "N19H"
   },
   {
     "programa": "NOVELA II (SÁB)",
@@ -253,7 +284,8 @@
     "coeficiente_tv": 0.75,
     "coeficiente_dig": null,
     "qtd_vinhetas": 1.0,
-    "": null
+    "": null,
+    "sigla": "N19S"
   },
   {
     "programa": "NOVELA III (SEG/SEX)",
@@ -261,7 +293,8 @@
     "coeficiente_tv": 0.75,
     "coeficiente_dig": null,
     "qtd_vinhetas": 1.0,
-    "": null
+    "": null,
+    "sigla": "N20H"
   },
   {
     "programa": "NOVELA III (SÁB)",
@@ -269,7 +302,8 @@
     "coeficiente_tv": 0.75,
     "coeficiente_dig": null,
     "qtd_vinhetas": 1.0,
-    "": null
+    "": null,
+    "sigla": "N20S"
   },
   {
     "programa": "PRAÇA TV 2a EDIÇÃO (SEG/SEX)",
@@ -277,7 +311,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "PTV2"
   },
   {
     "programa": "PRAÇA TV 2a EDIÇÃO (SEG/SEX)",
@@ -285,7 +320,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "PTV2"
   },
   {
     "programa": "PRAÇA TV 2a EDIÇÃO (SEG/SEX)",
@@ -293,7 +329,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "PTV2"
   },
   {
     "programa": "PRAÇA TV 2ª EDIÇÃO (SÁB)",
@@ -301,7 +338,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "PT2S"
   },
   {
     "programa": "PRAÇA TV 2ª EDIÇÃO (SÁB)",
@@ -309,7 +347,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "PT2S"
   },
   {
     "programa": "PRAÇA TV 2ª EDIÇÃO (SÁB)",
@@ -317,7 +356,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "PT2S"
   },
   {
     "programa": "GLOBO REPÓRTER",
@@ -325,7 +365,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "REPO"
   },
   {
     "programa": "GLOBO REPÓRTER",
@@ -333,7 +374,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "REPO"
   },
   {
     "programa": "GLOBO REPÓRTER",
@@ -341,7 +383,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "REPO"
   },
   {
     "programa": "GLOBO REPÓRTER REPRISE",
@@ -349,7 +392,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "GREP"
   },
   {
     "programa": "GLOBO REPÓRTER REPRISE",
@@ -357,7 +401,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "GREP"
   },
   {
     "programa": "GLOBO REPÓRTER REPRISE",
@@ -365,7 +410,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "GREP"
   },
   {
     "programa": "VALE A PENA VER DE NOVO",
@@ -373,7 +419,8 @@
     "coeficiente_tv": 0.75,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "VALE"
   },
   {
     "programa": "VALE A PENA VER DE NOVO",
@@ -381,7 +428,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "VALE"
   },
   {
     "programa": "JORNAL DO CAMPO",
@@ -389,7 +437,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "JOCA"
   },
   {
     "programa": "JORNAL DO CAMPO",
@@ -397,7 +446,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "JOCA"
   },
   {
     "programa": "JORNAL DO CAMPO",
@@ -405,7 +455,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "JOCA"
   },
   {
     "programa": "NO BALAIO",
@@ -413,7 +464,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "NOBA"
   },
   {
     "programa": "NO BALAIO",
@@ -421,7 +473,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "NOBA"
   },
   {
     "programa": "NO BALAIO",
@@ -429,7 +482,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "NOBA"
   },
   {
     "programa": "PRATO DO DIA",
@@ -437,7 +491,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "PDDA"
   },
   {
     "programa": "PRATO DO DIA",
@@ -445,7 +500,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "PDDA"
   },
   {
     "programa": "PRATO DO DIA",
@@ -453,7 +509,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": 0.1,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "PDDA"
   },
   {
     "programa": "DOMINGÃO COM HUCK",
@@ -461,7 +518,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "DOMI"
   },
   {
     "programa": "DOMINGÃO COM HUCK",
@@ -469,7 +527,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "DOMI"
   },
   {
     "programa": "DOMINGÃO COM HUCK",
@@ -477,7 +536,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "DOMI"
   },
   {
     "programa": "ESPORTE ESPETACULAR",
@@ -485,7 +545,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "ESPO"
   },
   {
     "programa": "ESPORTE ESPETACULAR",
@@ -493,7 +554,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "ESPO"
   },
   {
     "programa": "ESPORTE ESPETACULAR",
@@ -501,7 +563,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "ESPO"
   },
   {
     "programa": "FANTÁSTICO",
@@ -509,7 +572,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "FANT"
   },
   {
     "programa": "FANTÁSTICO",
@@ -517,7 +581,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "FANT"
   },
   {
     "programa": "FANTÁSTICO",
@@ -525,7 +590,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "FANT"
   },
   {
     "programa": "GLOBO REPÓRTER REPRISE",
@@ -533,7 +599,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "GREP"
   },
   {
     "programa": "GLOBO REPÓRTER REPRISE",
@@ -541,7 +608,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "GREP"
   },
   {
     "programa": "GLOBO REPÓRTER REPRISE",
@@ -549,7 +617,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "GREP"
   },
   {
     "programa": "GLOBO REPÓRTER",
@@ -557,7 +626,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "REPO"
   },
   {
     "programa": "GLOBO REPÓRTER",
@@ -565,7 +635,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "REPO"
   },
   {
     "programa": "GLOBO REPÓRTER",
@@ -573,7 +644,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "REPO"
   },
   {
     "programa": "JORNAL DA GLOBO",
@@ -581,7 +653,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "JGLO"
   },
   {
     "programa": "JORNAL DA GLOBO",
@@ -589,7 +662,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "JGLO"
   },
   {
     "programa": "JORNAL DA GLOBO",
@@ -597,7 +671,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "JGLO"
   },
   {
     "programa": "NOVELA DA TARDE - EDIÇÃO ESPECIAL",
@@ -605,7 +680,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "N15H"
   },
   {
     "programa": "NOVELA DA TARDE - EDIÇÃO ESPECIAL",
@@ -613,7 +689,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "N15H"
   },
   {
     "programa": "NOVELA DA TARDE - EDIÇÃO ESPECIAL",
@@ -621,7 +698,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "N15H"
   },
   {
     "programa": "SESSÃO DA TARDE",
@@ -629,7 +707,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "TARA"
   },
   {
     "programa": "SESSÃO DA TARDE",
@@ -637,7 +716,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "TARA"
   },
   {
     "programa": "SESSÃO DA TARDE",
@@ -645,7 +725,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "TARA"
   },
   {
     "programa": "TELA QUENTE",
@@ -653,7 +734,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "TELA"
   },
   {
     "programa": "TELA QUENTE",
@@ -661,7 +743,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "TELA"
   },
   {
     "programa": "TELA QUENTE",
@@ -669,7 +752,8 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "TELA"
   },
   {
     "programa": "TEMPERATURA MÁXIMA",
@@ -677,7 +761,8 @@
     "coeficiente_tv": 0.4,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "TMAX"
   },
   {
     "programa": "TEMPERATURA MÁXIMA",
@@ -685,7 +770,8 @@
     "coeficiente_tv": 0.375,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "TMAX"
   },
   {
     "programa": "TEMPERATURA MÁXIMA",
@@ -693,6 +779,7 @@
     "coeficiente_tv": 0.25,
     "coeficiente_dig": null,
     "qtd_vinhetas": 2.0,
-    "": null
+    "": null,
+    "sigla": "TMAX"
   }
 ]

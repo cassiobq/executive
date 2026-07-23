@@ -74,9 +74,9 @@ export default function PatrocinioPage({ onBack }) {
         fetchAllSheetData().then(res => {
             setDb(res);
             if (res.patrocinios && res.patrocinios.length > 0) {
-                const firstProg = res.patrocinios[0].programa;
-                setSelectedPrograma(firstProg);
-                const progData = res.programas.find(p => String(p.programa).trim() === String(firstProg).trim()) || {};
+                const firstSigla = res.patrocinios[0].sigla || res.patrocinios[0].programa;
+                setSelectedPrograma(firstSigla);
+                const progData = res.programas.find(p => String(p.sigla).trim() === String(firstSigla).trim()) || {};
                 const rioVerde = PRACAS.find(pr => pr.key === 'rio_verde');
                 const hasRioVerde = rioVerde && progData['rio_verde'] !== null && progData['rio_verde'] !== undefined && String(progData['rio_verde']).trim() !== '';
                 const firstPraca = hasRioVerde
@@ -90,7 +90,7 @@ export default function PatrocinioPage({ onBack }) {
     }, []);
 
     useEffect(() => {
-        const curP = db.patrocinios.find(p => String(p.programa) === String(selectedPrograma) && String(p.secundagem) === String(selectedPatrocinio)) || {};
+        const curP = db.patrocinios.find(p => (p.sigla || p.programa) === selectedPrograma && String(p.secundagem) === String(selectedPatrocinio)) || {};
         const digAux = curP.coeficiente_dig;
         const hasDig = digAux !== undefined && digAux !== null && String(digAux) !== '' && parseNum(digAux) > 0;
         if (!hasDig) setVeiculacaoG1(false);
@@ -98,13 +98,13 @@ export default function PatrocinioPage({ onBack }) {
 
     useEffect(() => {
         if (selectedPrograma && db.programas.length > 0) {
-            const progData = db.programas.find(p => String(p.programa).trim() === String(selectedPrograma).trim()) || {};
+            const progData = db.programas.find(p => p.sigla === selectedPrograma) || {};
             const currentPracaValid = progData[selectedPraca] !== null && progData[selectedPraca] !== undefined && String(progData[selectedPraca]).trim() !== '';
             if (!currentPracaValid) {
                 const validPracas = PRACAS.filter(pr => progData[pr.key] !== null && progData[pr.key] !== undefined && String(progData[pr.key]).trim() !== '');
                 if (validPracas.length > 0) setSelectedPraca(validPracas[0].key);
             }
-            const pPatrocinios = db.patrocinios.filter(p => p.programa === selectedPrograma);
+            const pPatrocinios = db.patrocinios.filter(p => (p.sigla || p.programa) === selectedPrograma);
             if (pPatrocinios.length > 0 && !pPatrocinios.map(p => p.secundagem).includes(selectedPatrocinio)) {
                 setSelectedPatrocinio(pPatrocinios[0].secundagem);
             }
@@ -149,8 +149,8 @@ export default function PatrocinioPage({ onBack }) {
     );
 
     // --- CALCULATIONS ---
-    const curProg = db.programas.find(p => String(p.programa).trim() === String(selectedPrograma).trim()) || {};
-    const curPat = db.patrocinios.find(p => String(p.programa) === String(selectedPrograma) && String(p.secundagem) === String(selectedPatrocinio)) || {};
+    const curProg = db.programas.find(p => p.sigla === selectedPrograma) || {};
+    const curPat = db.patrocinios.find(p => (p.sigla || p.programa) === selectedPrograma && String(p.secundagem) === String(selectedPatrocinio)) || {};
 
     const insercoesTvProg = parseNum(curProg.insercoes_mes);
     const audiencia = parseNum(curProg.audiencia_rvd);
@@ -193,7 +193,11 @@ export default function PatrocinioPage({ onBack }) {
         PatrocinioRules: { qtdVinhetas, secundagemAsSeconds: extractSecs(curPat.secundagem) }
     };
 
-    const programasOptions = [...new Set(db.patrocinios.map(p => p.programa).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    const programasOptions = db.programas
+        .filter(p => db.patrocinios.some(pat => (pat.sigla || pat.programa) === p.sigla))
+        .map(p => ({ sigla: p.sigla, programa: p.programa }))
+        .sort((a, b) => a.programa.localeCompare(b.programa, 'pt-BR'));
+
     const pracasOptions = PRACAS
         .filter(pr => curProg[pr.key] !== null && curProg[pr.key] !== undefined && String(curProg[pr.key]).trim() !== '')
         .sort((a, b) => {
@@ -201,7 +205,7 @@ export default function PatrocinioPage({ onBack }) {
             if (b.key === 'rio_verde') return 1;
             return a.label.localeCompare(b.label, 'pt-BR');
         });
-    const patrociniosOptions = db.patrocinios.filter(p => p.programa === selectedPrograma).map(p => p.secundagem).filter(Boolean);
+    const patrociniosOptions = db.patrocinios.filter(p => (p.sigla || p.programa) === selectedPrograma).map(p => p.secundagem).filter(Boolean);
 
     return (
         <div className="app-container">
@@ -237,9 +241,9 @@ export default function PatrocinioPage({ onBack }) {
                         className="form-control"
                         value={selectedPrograma}
                         onChange={(e) => {
-                            const newProg = e.target.value;
-                            setSelectedPrograma(newProg);
-                            const progData = db.programas.find(p => String(p.programa).trim() === String(newProg).trim()) || {};
+                            const newSigla = e.target.value;
+                            setSelectedPrograma(newSigla);
+                            const progData = db.programas.find(p => p.sigla === newSigla) || {};
                             const currentPracaValid = progData[selectedPraca] !== null && progData[selectedPraca] !== undefined && String(progData[selectedPraca]).trim() !== '';
                             if (!currentPracaValid) {
                                 const hasRioVerde = progData['rio_verde'] !== null && progData['rio_verde'] !== undefined && String(progData['rio_verde']).trim() !== '';
@@ -248,11 +252,11 @@ export default function PatrocinioPage({ onBack }) {
                                     : (PRACAS.find(pr => progData[pr.key] !== null && progData[pr.key] !== undefined && String(progData[pr.key]).trim() !== '')?.key);
                                 if (fallback) setSelectedPraca(fallback);
                             }
-                            const newPats = db.patrocinios.filter(p => p.programa === newProg);
+                            const newPats = db.patrocinios.filter(p => (p.sigla || p.programa) === newSigla);
                             if (newPats.length > 0) setSelectedPatrocinio(newPats[0].secundagem);
                         }}
                     >
-                        {programasOptions.map(p => <option key={p} value={p}>{p}</option>)}
+                        {programasOptions.map(p => <option key={p.sigla} value={p.sigla}>{p.programa}</option>)}
                     </select>
                 </div>
 
