@@ -8,7 +8,7 @@
     "": null
   },
   {
-    "programa": "BOM DIA PRAÇA",
+    "programa": "BOM DIA GOIÁS",
     "secundagem": 7.0,
     "coeficiente_tv": 0.4,
     "coeficiente_dig": 0.1,
@@ -16,7 +16,7 @@
     "": null
   },
   {
-    "programa": "BOM DIA PRAÇA",
+    "programa": "BOM DIA GOIÁS",
     "secundagem": 5.0,
     "coeficiente_tv": 0.375,
     "coeficiente_dig": 0.1,
@@ -24,7 +24,7 @@
     "": null
   },
   {
-    "programa": "BOM DIA PRAÇA",
+    "programa": "BOM DIA GOIÁS",
     "secundagem": 3.0,
     "coeficiente_tv": 0.25,
     "coeficiente_dig": 0.1,
@@ -296,7 +296,7 @@
     "": null
   },
   {
-    "programa": "PRAÇA TV 2a EDIÇÃO (SÁB)",
+    "programa": "PRAÇA TV 2ª EDIÇÃO (SÁB)",
     "secundagem": 7.0,
     "coeficiente_tv": 0.4,
     "coeficiente_dig": 0.1,
@@ -304,7 +304,7 @@
     "": null
   },
   {
-    "programa": "PRAÇA TV 2a EDIÇÃO (SÁB)",
+    "programa": "PRAÇA TV 2ª EDIÇÃO (SÁB)",
     "secundagem": 5.0,
     "coeficiente_tv": 0.375,
     "coeficiente_dig": 0.1,
@@ -312,7 +312,7 @@
     "": null
   },
   {
-    "programa": "PRAÇA TV 2a EDIÇÃO (SÁB)",
+    "programa": "PRAÇA TV 2ª EDIÇÃO (SÁB)",
     "secundagem": 3.0,
     "coeficiente_tv": 0.25,
     "coeficiente_dig": 0.1,
