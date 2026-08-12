@@ -1,0 +1,451 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:ital,wght@0,300;0,400;0,600;0,700;0,800;1,400;1,600;1,800&display=swap');
+
+:root {
+  --primary: #5a1cdb;
+  --secondary: #ffe100;
+  --success: #0ac75b;
+  --text-dark: #1e1e1e;
+  --text-light: #ffffff;
+  --text-muted: #666666;
+  --bg-app: #f4f5f9;
+  --bg-card: #ffffff;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-app);
+  color: var(--text-dark);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* App Layout */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Page wrapper: allow scrolling on desktop */
+.page-wrapper {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sidebar {
+  width: 400px;
+  background-color: white;
+  padding: 2rem;
+  overflow-y: auto;
+  box-shadow: var(--shadow-sm);
+  z-index: 10;
+  border-right: 1px solid #eaeaea;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  background-color: #e9ecf2;
+}
+
+/* Form Styles */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-dark);
+  font-size: 0.9rem;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(90, 28, 219, 0.1);
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.checkbox-group input {
+  width: 1.2rem;
+  height: 1.2rem;
+  cursor: pointer;
+}
+
+.checkbox-group label {
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
+/* Segmented control (ex: Card / Slide) */
+.segmented-control {
+  display: flex;
+  background: #f0f0f0;
+  border-radius: 10px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.segmented-control button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 0.5rem 0;
+  border-radius: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.segmented-control button.active {
+  background: white;
+  color: var(--primary);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Slide format: 2 landscape pages stacked, centered */
+.slide-scale-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2rem 0;
+}
+
+.card-settings {
+  background: #f8f9fc;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #e2e8f0;
+}
+
+.card-settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+  width: 100%;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  background-color: #4815b5;
+}
+
+/* Typography */
+.text-primary {
+  color: var(--primary);
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.font-italic {
+  font-style: italic;
+}
+
+/* --- Mobile: hidden by default --- */
+.mobile-tray-toggle,
+.mobile-overlay,
+.sidebar-header-mobile,
+.close-tray-btn,
+.mobile-home-btn {
+  display: none;
+}
+
+/* Hidden only on mobile */
+.desktop-only {
+  display: flex;
+}
+
+.action-buttons-wrapper {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+  justify-content: center;
+}
+
+/* ==============================
+   MOBILE LAYOUT
+   ============================== */
+@media (max-width: 768px) {
+
+  /* Lock the root so nothing triggers a page-level scroll */
+  html,
+  body {
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  /* Lock page wrapper — no scrolling on mobile */
+  .page-wrapper {
+    overflow: hidden;
+  }
+
+  /* Full-screen, no scroll — card fills viewport */
+  .app-container {
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* Hide desktop-only elements (e.g. Início back button) in mobile tray */
+  .desktop-only {
+    display: none !important;
+  }
+
+  /* Hide desktop sidebar completely on mobile */
+  .sidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 85dvh;
+    max-height: 85dvh;
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    z-index: 1000;
+    /* Fully hidden below viewport — no peeking */
+    transform: translateY(110%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 1.5rem;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .sidebar.open {
+    transform: translateY(0);
+  }
+
+  .sidebar-header-mobile {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .close-tray-btn {
+    display: flex;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 50%;
+    padding: 0.5rem;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Main content: full height minus floating buttons area */
+  .main-content {
+    flex: 1;
+    padding: 0;
+    padding-bottom: 88px;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background-color: #e9ecf2;
+  }
+
+  /* Scale the 450px card with 5px margin per side */
+  .preview-scale-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    transform: scale(0.80);
+    transform-origin: center center;
+    /* Allocate the correct height so surrounding flex doesn't collapse */
+    height: calc(450px * 1.778 * 0.80);
+  }
+
+  /* Scale the 2 landscape 1000px pages (stacked) to fit mobile width */
+  .slide-scale-wrapper {
+    transform: scale(0.36);
+    transform-origin: top center;
+    gap: 1rem;
+    padding: 1rem 0;
+    /* 2 pages (1000px * 210/297 tall each) + gap + padding, scaled down */
+    height: calc((707px * 2 + 16px + 32px) * 0.36);
+    margin-top: 1rem;
+  }
+
+  .action-buttons-wrapper {
+    flex-direction: column;
+    padding-top: 1rem;
+  }
+
+  /* Floating Actions Bar */
+  .mobile-floating-actions {
+    display: flex;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    gap: 0.5rem;
+    z-index: 100;
+    width: 92%;
+    max-width: 420px;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* Liquid Glass buttons */
+  .mobile-tray-toggle {
+    display: flex;
+    flex: 1;
+    background: rgba(90, 28, 219, 0.72);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    padding: 0.8rem 1rem;
+    border-radius: 50px;
+    font-weight: 700;
+    font-family: inherit;
+    font-size: 0.9rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    justify-content: center;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    transition: all 0.2s ease;
+  }
+
+  .mobile-copy-btn {
+    display: flex;
+    background: rgba(10, 199, 91, 0.75);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    flex: 0 0 52px;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    transition: all 0.2s ease;
+  }
+
+  .mobile-home-btn {
+    display: flex;
+    background: rgba(10, 199, 91, 0.75);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    flex: 0 0 52px;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    transition: all 0.2s ease;
+  }
+
+  .mobile-tray-toggle:active,
+  .mobile-copy-btn:active,
+  .mobile-home-btn:active {
+    transform: scale(0.95);
+    filter: brightness(1.1);
+  }
+
+  /* Dark Overlay */
+  .mobile-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    backdrop-filter: blur(2px);
+    animation: fadeIn 0.3s forwards;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes cameraFlash {
+  0% {
+    opacity: 0.95;
+  }
+
+  40% {
+    opacity: 0.7;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
