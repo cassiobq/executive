@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Repeat } from 'lucide-react';
 import { formatMoney } from '../utils/cardHelpers';
 import ResumoSlide from './ResumoSlide';
 
@@ -16,14 +16,27 @@ const TOTAL_COL = 60;
 const UNFILLED_WEEKDAY = '#e2e2e9';
 const UNFILLED_WEEKEND = 'rgba(249,115,22,0.24)';
 const HEADER_WEEKEND_TINT = 'rgba(249,115,22,0.12)';
+// Dias fora do padrão do programa (trava por dia da semana): hachurado, sem interação.
+const LOCKED_BG = 'repeating-linear-gradient(45deg, #eee, #eee 3px, #ddd 3px, #ddd 6px)';
 // Cada segundagem (15s, 30s...) recebe um tom de cinza levemente diferente nas
 // colunas de preço, pra não confundir o olho ao "dar zoom out" na tabela.
 const GROUP_BG = ['#f7f7f9', '#edeef1'];
 
-// Tabela unificada (mapa + preços por secundagem): o usuário clica nas células
-// pra marcar em quais dias cada programa vai ao ar — é ao mesmo tempo a interface
-// de entrada de dados e a peça exportada pro cliente (por isso os controles de
-// edição têm a classe "no-export", excluída na hora de gerar a imagem/PDF).
+// Normaliza a digitação da marca de inserção: dígitos (quantidade) seguidos de no
+// máximo 1 letra maiúscula (código da inserção). Ex.: "2b" -> "2B", "ab" -> "A".
+const normalizeMark = (raw) => {
+    const cleaned = raw.toUpperCase().replace(/[^0-9A-Z]/g, '');
+    const match = cleaned.match(/^(\d*)([A-Z]?)/);
+    return match ? match[1] + match[2] : '';
+};
+
+// Tabela unificada (mapa + preços por secundagem): o usuário clica numa célula pra
+// editá-la inline e digita uma letra maiúscula (opcionalmente prefixada por um
+// número de repetições, ex. "2A") marcando a inserção daquele dia — é ao mesmo
+// tempo a interface de entrada de dados e a peça exportada pro cliente (por isso os
+// controles de edição têm a classe "no-export", excluída na hora de gerar a
+// imagem/PDF). Em repouso cada célula é sempre um <div> (nunca um <input> parado),
+// garantindo que o html-to-image exporte sempre o valor real.
 //
 // Quando showResumo=true, o bloco de visualizações/preços/observações (mesmo
 // conteúdo de ResumoSlidePage) é renderizado logo abaixo da tabela, na mesma
@@ -34,12 +47,14 @@ const MapaInsercoes = ({
     year,
     monthIndex, // 0-11
     daysInMonth,
-    rows, // [{ sigla, days, programa, horario, valor10, valor15, valor30 }]
+    rows, // [{ sigla, marks, programa, horario, allowedWeekdays, valor10, valor15, valor30 }]
     programas,
     activeSecondsList, // [{ segundos, ... }] — quais colunas de preço mostrar
-    onToggleDay,
+    onSetDayMark,
     onAddRow,
     onDeleteRow,
+    onReorderRows,
+    onReplicateWeek,
     maxRows,
     compact = true, // linhas compactas (quando a tabela divide a página com o resumo)
     showResumo = false,
@@ -47,6 +62,9 @@ const MapaInsercoes = ({
 }) => {
     const [busca, setBusca] = useState('');
     const [buscaFocused, setBuscaFocused] = useState(false);
+    const [editingCell, setEditingCell] = useState(null); // { rowIdx, day } | null
+    const [editValue, setEditValue] = useState('');
+    const [dragIndex, setDragIndex] = useState(null);
 
     const siglasOptions = programas
         .filter(p => p.sigla)
@@ -71,6 +89,30 @@ const MapaInsercoes = ({
         onAddRow(sigla);
         setBusca('');
         setBuscaFocused(false);
+    };
+
+    const startEdit = (rowIdx, day, currentMark) => {
+        setEditingCell({ rowIdx, day });
+        setEditValue(currentMark || '');
+    };
+
+    const commitEdit = () => {
+        if (!editingCell) return;
+        const { rowIdx, day } = editingCell;
+        const isValid = /^\d*[A-Z]$/.test(editValue);
+        onSetDayMark(rowIdx, day, isValid ? editValue : '');
+        setEditingCell(null);
+        setEditValue('');
+    };
+
+    const cancelEdit = () => {
+        setEditingCell(null);
+        setEditValue('');
+    };
+
+    const handleRowDrop = (targetIdx) => {
+        if (dragIndex !== null) onReorderRows(dragIndex, targetIdx);
+        setDragIndex(null);
     };
 
     return (
@@ -109,6 +151,38 @@ const MapaInsercoes = ({
 
             {/* Grid */}
             <div style={{ flex: 'none' }}>
+                {/* Week-replicate controls (só editável, some da exportação) */}
+                <div className="no-export" style={{ display: 'grid', gridTemplateColumns: gridTemplate, height: '11px', marginBottom: '1px' }}>
+                    <div />
+                    <div />
+                    {days.map(d => {
+                        const dow = new Date(year, monthIndex, d).getDay();
+                        const isMonday = dow === 1;
+                        const hasPriorWeek = d - 7 >= 1;
+                        if (!isMonday || !hasPriorWeek) return <div key={d} />;
+                        return (
+                            <div key={d} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <button
+                                    onClick={() => onReplicateWeek(d)}
+                                    title="Repetir semana anterior (todos os programas)"
+                                    style={{
+                                        background: 'none', border: 'none', cursor: 'pointer',
+                                        padding: 0, color: 'var(--primary)', display: 'flex', opacity: 0.8,
+                                    }}
+                                >
+                                    <Repeat size={9} />
+                                </button>
+                            </div>
+                        );
+                    })}
+                    <div />
+                    {activeSecondsList.map(sc => (
+                        <React.Fragment key={sc.segundos}>
+                            <div />
+                            <div />
+                        </React.Fragment>
+                    ))}
+                </div>
                 {/* Day numbers */}
                 <div style={{ display: 'grid', gridTemplateColumns: gridTemplate, fontSize: '0.5rem', fontWeight: 700, color: '#111' }}>
                     <div />
@@ -161,12 +235,22 @@ const MapaInsercoes = ({
 
                 {/* Program rows */}
                 {rows.map((row, rowIdx) => (
-                    <div key={rowIdx} style={{
-                        display: 'grid', gridTemplateColumns: gridTemplate,
-                        alignItems: 'center', minHeight: `${rowMinHeight}px`,
-                        backgroundColor: rowIdx % 2 === 0 ? 'rgba(90,28,219,0.04)' : 'transparent',
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', overflow: 'hidden' }}>
+                    <div
+                        key={rowIdx}
+                        draggable
+                        onDragStart={() => setDragIndex(rowIdx)}
+                        onDragOver={e => e.preventDefault()}
+                        onDrop={() => handleRowDrop(rowIdx)}
+                        onDragEnd={() => setDragIndex(null)}
+                        style={{
+                            display: 'grid', gridTemplateColumns: gridTemplate,
+                            alignItems: 'center', minHeight: `${rowMinHeight}px`,
+                            backgroundColor: rowIdx % 2 === 0 ? 'rgba(90,28,219,0.04)' : 'transparent',
+                            opacity: dragIndex === rowIdx ? 0.4 : 1,
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', overflow: 'hidden' }}>
+                            <GripVertical className="no-export" size={10} style={{ color: '#94a3b8', cursor: 'grab', flexShrink: 0 }} />
                             <button
                                 className="no-export"
                                 onClick={() => onDeleteRow(rowIdx)}
@@ -187,23 +271,69 @@ const MapaInsercoes = ({
                         </div>
                         <div style={{ textAlign: 'center', fontSize: rowFontSize, color: '#333' }}>{row.horario}</div>
                         {days.map(d => {
-                            const marked = row.days.includes(d);
                             const dow = new Date(year, monthIndex, d).getDay();
                             const isWeekend = dow === 0 || dow === 6;
+                            const locked = row.allowedWeekdays && !row.allowedWeekdays.has(dow);
+                            const mark = row.marks[d] || '';
+                            const isEditing = editingCell && editingCell.rowIdx === rowIdx && editingCell.day === d;
+
+                            if (locked) {
+                                return (
+                                    <div
+                                        key={d}
+                                        title="Dia fora do padrão de veiculação deste programa"
+                                        style={{
+                                            height: `${rowHeight}px`, margin: '1px',
+                                            borderRadius: '3px', cursor: 'not-allowed',
+                                            background: LOCKED_BG,
+                                        }}
+                                    />
+                                );
+                            }
+
+                            if (isEditing) {
+                                return (
+                                    <input
+                                        key={d}
+                                        className="no-export"
+                                        autoFocus
+                                        value={editValue}
+                                        onChange={e => setEditValue(normalizeMark(e.target.value))}
+                                        onBlur={commitEdit}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter') e.currentTarget.blur();
+                                            else if (e.key === 'Escape') cancelEdit();
+                                        }}
+                                        style={{
+                                            height: `${rowHeight}px`, width: '100%', margin: '1px',
+                                            boxSizing: 'border-box', textAlign: 'center',
+                                            fontSize: rowFontSize, fontWeight: 800,
+                                            border: '1.5px solid var(--primary)', borderRadius: '3px',
+                                            padding: 0, fontFamily: "'Outfit', sans-serif", outline: 'none',
+                                        }}
+                                    />
+                                );
+                            }
+
                             return (
                                 <div
                                     key={d}
-                                    onClick={() => onToggleDay(rowIdx, d)}
+                                    onClick={() => startEdit(rowIdx, d, mark)}
                                     style={{
                                         height: `${rowHeight}px`, margin: '1px',
                                         borderRadius: '3px', cursor: 'pointer',
-                                        backgroundColor: marked ? 'var(--primary)' : (isWeekend ? UNFILLED_WEEKEND : UNFILLED_WEEKDAY),
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: rowFontSize, fontWeight: 800,
+                                        color: mark ? 'white' : 'transparent',
+                                        backgroundColor: mark ? 'var(--primary)' : (isWeekend ? UNFILLED_WEEKEND : UNFILLED_WEEKDAY),
                                     }}
-                                />
+                                >
+                                    {mark}
+                                </div>
                             );
                         })}
                         <div style={{ textAlign: 'center', fontSize: rowFontSize, fontWeight: 800, color: 'var(--primary)' }}>
-                            {row.days.length}
+                            {row.insercoes}
                         </div>
                         {activeSecondsList.map((sc, gi) => (
                             <React.Fragment key={sc.segundos}>

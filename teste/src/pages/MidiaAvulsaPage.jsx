@@ -4,6 +4,7 @@ import { fetchAllSheetData } from '../services/sheetsService';
 import MidiaAvulsaCard from '../components/MidiaAvulsaCard';
 import MapaInsercoes from '../components/MapaInsercoes';
 import ResumoSlidePage from '../components/ResumoSlidePage';
+import { getAllowedWeekdays, markQuantity } from '../utils/weekLock';
 
 const parseNum = (val) => {
     if (!val) return 0;
@@ -89,7 +90,7 @@ export default function MidiaAvulsaPage({ onBack }) {
     const [selectedMonthOffset, setSelectedMonthOffset] = useState('');
     const [tableRows, setTableRows] = useState([]);
     const [formato, setFormato] = useState('card'); // 'card' | 'slide'
-    const [mapRows, setMapRows] = useState([]); // [{ sigla, days: number[] }] — usado no formato slide
+    const [mapRows, setMapRows] = useState([]); // [{ sigla, marks: { [day]: string } }] — usado no formato slide
 
     // Searchbox state
     const [busca, setBusca] = useState('');
@@ -121,7 +122,10 @@ export default function MidiaAvulsaPage({ onBack }) {
     // Ao trocar de mês, remove marcações de dias que não existem no novo mês (ex: dia 31 num mês de 30)
     useEffect(() => {
         const { daysInMonth } = resolveMonthYear(selectedMonthOffset);
-        setMapRows(prev => prev.map(row => ({ ...row, days: row.days.filter(d => d <= daysInMonth) })));
+        setMapRows(prev => prev.map(row => ({
+            ...row,
+            marks: Object.fromEntries(Object.entries(row.marks).filter(([d]) => Number(d) <= daysInMonth)),
+        })));
     }, [selectedMonthOffset]);
 
     // --- Derived data ---
@@ -139,11 +143,16 @@ export default function MidiaAvulsaPage({ onBack }) {
         return String(p.sigla).toLowerCase().includes(q) || String(p.programa).toLowerCase().includes(q);
     });
 
-    // No formato slide, as "inserções" de cada linha são derivadas da contagem de dias
-    // marcados no mapa, em vez do número digitado na sidebar (formato card). O array
-    // `days` segue junto (usado pela grade do mapa) e mantém o mesmo índice de mapRows.
+    // No formato slide, as "inserções" de cada linha são derivadas da soma das quantidades
+    // marcadas no mapa (ex.: "A"=1, "2B"=2), em vez do número digitado na sidebar (formato
+    // card). O objeto `marks` segue junto (usado pela grade do mapa) e mantém o mesmo índice
+    // de mapRows.
     const sourceRows = formato === 'slide'
-        ? mapRows.map(r => ({ sigla: r.sigla, insercoes: r.days.length, days: r.days }))
+        ? mapRows.map(r => ({
+            sigla: r.sigla,
+            insercoes: Object.values(r.marks).reduce((s, mark) => s + markQuantity(mark), 0),
+            marks: r.marks,
+        }))
         : tableRows;
 
     const enrichedRows = sourceRows.map(row => {
@@ -160,9 +169,10 @@ export default function MidiaAvulsaPage({ onBack }) {
         return {
             programa: prog.programa || row.sigla,
             dias: prog.dias || '—',
+            allowedWeekdays: getAllowedWeekdays(prog.dias),
             horario: prog.horario || '—',
             insercoes: row.insercoes,
-            days: row.days || [],
+            marks: row.marks || {},
             valor30,
             valor15: unitValor15 * row.insercoes,
             valor10: unitValor10 * row.insercoes,
@@ -215,19 +225,48 @@ export default function MidiaAvulsaPage({ onBack }) {
 
     const handleAddMapRow = (sigla) => {
         if (!sigla || mapRows.length >= MAX_ROWS) return;
-        setMapRows(prev => [...prev, { sigla, days: [] }]);
+        setMapRows(prev => [...prev, { sigla, marks: {} }]);
     };
 
     const handleDeleteMapRow = (idx) => {
         setMapRows(prev => prev.filter((_, i) => i !== idx));
     };
 
-    const handleToggleDay = (rowIdx, day) => {
+    // markStr === '' remove a marcação do dia; senão seta (já validado no componente, ex.: "A", "2B").
+    const handleSetDayMark = (rowIdx, day, markStr) => {
         setMapRows(prev => prev.map((row, i) => {
             if (i !== rowIdx) return row;
-            const has = row.days.includes(day);
-            const days = has ? row.days.filter(d => d !== day) : [...row.days, day].sort((a, b) => a - b);
-            return { ...row, days };
+            const marks = { ...row.marks };
+            if (!markStr) delete marks[day];
+            else marks[day] = markStr;
+            return { ...row, marks };
+        }));
+    };
+
+    const handleReorderRows = (fromIdx, toIdx) => {
+        if (fromIdx === toIdx) return;
+        setMapRows(prev => {
+            const next = [...prev];
+            const [moved] = next.splice(fromIdx, 1);
+            next.splice(toIdx, 0, moved);
+            return next;
+        });
+    };
+
+    // Copia, pra TODOS os programas do mapa, as marcações da semana anterior (mondayDay - 7)
+    // pra semana que começa em mondayDay, sobrescrevendo o que já estava marcado no destino.
+    const handleReplicateWeek = (mondayDay) => {
+        const { daysInMonth } = resolveMonthYear(selectedMonthOffset);
+        setMapRows(prev => prev.map(row => {
+            const marks = { ...row.marks };
+            for (let d = mondayDay; d < mondayDay + 7 && d <= daysInMonth; d++) {
+                const sourceDay = d - 7;
+                if (sourceDay < 1) continue;
+                const sourceMark = row.marks[sourceDay];
+                if (sourceMark) marks[d] = sourceMark;
+                else delete marks[d];
+            }
+            return { ...row, marks };
         }));
     };
 
@@ -561,9 +600,11 @@ export default function MidiaAvulsaPage({ onBack }) {
                                 rows={enrichedRows}
                                 programas={db.programas}
                                 activeSecondsList={secondsCards}
-                                onToggleDay={handleToggleDay}
+                                onSetDayMark={handleSetDayMark}
                                 onAddRow={handleAddMapRow}
                                 onDeleteRow={handleDeleteMapRow}
+                                onReorderRows={handleReorderRows}
+                                onReplicateWeek={handleReplicateWeek}
                                 maxRows={MAX_ROWS}
                                 compact={useSinglePage}
                                 showResumo={useSinglePage}
