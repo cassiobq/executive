@@ -218,8 +218,10 @@ body {
 
 /* ==============================
    MOBILE LAYOUT
+   Also matches phones in landscape: they're often wider than 768px but short
+   (height <= 500px), which tablets/desktops in landscape are not.
    ============================== */
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-height: 500px) and (orientation: landscape) {
 
   /* Lock the root so nothing triggers a page-level scroll */
   html,
@@ -435,7 +437,7 @@ body {
    touch-action: pinch-zoom allows the pinch gesture but blocks 1-finger panning,
    so a stray touch never scrolls the page while the user taps a cell to edit it.
    ============================== */
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-height: 500px) and (orientation: landscape) {
   html.slide-desktop-mode,
   html.slide-desktop-mode body {
     height: auto;
