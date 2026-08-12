@@ -11,13 +11,10 @@ const UNIT_COL = 52;
 const TOTAL_COL = 60;
 
 // Fundo dos dias não marcados: mais escuro que o branco da página pra ficar fácil
-// de enxergar onde clicar; fins de semana ganham um laranja translúcido, separando
-// visualmente as semanas.
+// de enxergar onde clicar. Fins de semana usam sempre o mesmo laranja translúcido
+// (cabeçalho, números do dia e células), pra ler a coluna inteira como um bloco só.
 const UNFILLED_WEEKDAY = '#e2e2e9';
-const UNFILLED_WEEKEND = 'rgba(249,115,22,0.24)';
-const HEADER_WEEKEND_TINT = 'rgba(249,115,22,0.12)';
-// Dias fora do padrão do programa (trava por dia da semana): hachurado, sem interação.
-const LOCKED_BG = 'repeating-linear-gradient(45deg, #eee, #eee 3px, #ddd 3px, #ddd 6px)';
+const WEEKEND_BG = 'rgba(249,115,22,0.18)';
 // Cada segundagem (15s, 30s...) recebe um tom de cinza levemente diferente nas
 // colunas de preço, pra não confundir o olho ao "dar zoom out" na tabela.
 const GROUP_BG = ['#f7f7f9', '#edeef1'];
@@ -187,9 +184,18 @@ const MapaInsercoes = ({
                 <div style={{ display: 'grid', gridTemplateColumns: gridTemplate, fontSize: '0.5rem', fontWeight: 700, color: '#111' }}>
                     <div />
                     <div />
-                    {days.map(d => (
-                        <div key={d} style={{ textAlign: 'center', padding: '0.12rem 0' }}>{d}</div>
-                    ))}
+                    {days.map(d => {
+                        const dow = new Date(year, monthIndex, d).getDay();
+                        const isWeekend = dow === 0 || dow === 6;
+                        return (
+                            <div key={d} style={{
+                                textAlign: 'center', padding: '0.12rem 0', borderRadius: '3px',
+                                backgroundColor: isWeekend ? WEEKEND_BG : 'transparent',
+                            }}>
+                                {d}
+                            </div>
+                        );
+                    })}
                     <div />
                     {activeSecondsList.map(sc => (
                         <React.Fragment key={sc.segundos}>
@@ -213,7 +219,7 @@ const MapaInsercoes = ({
                         return (
                             <div key={d} style={{
                                 textAlign: 'center', color: isWeekend ? '#c2570f' : '#666',
-                                backgroundColor: isWeekend ? HEADER_WEEKEND_TINT : 'transparent',
+                                backgroundColor: isWeekend ? WEEKEND_BG : 'transparent',
                                 borderRadius: '3px',
                             }}>
                                 {WEEKDAY_LETTERS[dow]}
@@ -285,7 +291,7 @@ const MapaInsercoes = ({
                                         style={{
                                             height: `${rowHeight}px`, margin: '1px',
                                             borderRadius: '3px', cursor: 'not-allowed',
-                                            background: LOCKED_BG,
+                                            backgroundColor: 'transparent',
                                         }}
                                     />
                                 );
@@ -325,7 +331,7 @@ const MapaInsercoes = ({
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         fontSize: rowFontSize, fontWeight: 800,
                                         color: mark ? 'white' : 'transparent',
-                                        backgroundColor: mark ? 'var(--primary)' : (isWeekend ? UNFILLED_WEEKEND : UNFILLED_WEEKDAY),
+                                        backgroundColor: mark ? 'var(--primary)' : (isWeekend ? WEEKEND_BG : UNFILLED_WEEKDAY),
                                     }}
                                 >
                                     {mark}
