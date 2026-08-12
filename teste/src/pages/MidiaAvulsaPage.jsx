@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Settings2, Check, Camera, Plus, Trash2, Home, FileDown } from 'lucide-react';
 import { fetchAllSheetData } from '../services/sheetsService';
 import MidiaAvulsaCard from '../components/MidiaAvulsaCard';
-import MidiaAvulsaCardLandscape from '../components/MidiaAvulsaCardLandscape';
 import MapaInsercoes from '../components/MapaInsercoes';
+import ResumoSlidePage from '../components/ResumoSlidePage';
 
 const parseNum = (val) => {
     if (!val) return 0;
@@ -26,6 +26,9 @@ const PRACAS = [
 
 const SECONDS_OPTIONS = [10, 15, 30];
 const MAX_ROWS = 13;
+// Acima disso, tabela + resumo não cabem numa página só — o resumo (visualizações,
+// preços, observações) vira uma 2ª página.
+const MAX_ROWS_SINGLE_PAGE = 8;
 
 const MONTH_NAMES = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -137,9 +140,10 @@ export default function MidiaAvulsaPage({ onBack }) {
     });
 
     // No formato slide, as "inserções" de cada linha são derivadas da contagem de dias
-    // marcados no mapa (page 2), em vez do número digitado na sidebar (formato card).
+    // marcados no mapa, em vez do número digitado na sidebar (formato card). O array
+    // `days` segue junto (usado pela grade do mapa) e mantém o mesmo índice de mapRows.
     const sourceRows = formato === 'slide'
-        ? mapRows.map(r => ({ sigla: r.sigla, insercoes: r.days.length }))
+        ? mapRows.map(r => ({ sigla: r.sigla, insercoes: r.days.length, days: r.days }))
         : tableRows;
 
     const enrichedRows = sourceRows.map(row => {
@@ -153,6 +157,7 @@ export default function MidiaAvulsaPage({ onBack }) {
             dias: prog.dias || '—',
             horario: prog.horario || '—',
             insercoes: row.insercoes,
+            days: row.days || [],
             valor30,
             // Correct formula: valor - (valor * (1 - coeficiente))
             valor15: valor30 - (valor30 * (1 - coef15)),
@@ -180,6 +185,7 @@ export default function MidiaAvulsaPage({ onBack }) {
         }));
 
     const numVisibleCards = secondsCards.length;
+    const useSinglePage = mapRows.length <= MAX_ROWS_SINGLE_PAGE;
 
     // --- Handlers ---
     const handleSelectSigla = (p) => {
@@ -261,7 +267,7 @@ export default function MidiaAvulsaPage({ onBack }) {
     };
 
     const handleExportPdf = async () => {
-        if (!page1Ref.current || !page2Ref.current) return;
+        if (!page1Ref.current) return;
         setIsFlashing(true);
         setTimeout(() => setIsFlashing(false), 400);
         try {
@@ -273,16 +279,19 @@ export default function MidiaAvulsaPage({ onBack }) {
                 backgroundColor: '#ffffff',
                 filter: (node) => !node.classList?.contains('no-export'),
             };
-            const [img1, img2] = await Promise.all([
-                htmlToImage.toJpeg(page1Ref.current, exportOpts),
-                htmlToImage.toJpeg(page2Ref.current, exportOpts),
-            ]);
             const widthMm = 297;
             const heightMm = 210;
             const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [widthMm, heightMm], compress: true });
+
+            const img1 = await htmlToImage.toJpeg(page1Ref.current, exportOpts);
             pdf.addImage(img1, 'JPEG', 0, 0, widthMm, heightMm);
-            pdf.addPage([widthMm, heightMm], 'landscape');
-            pdf.addImage(img2, 'JPEG', 0, 0, widthMm, heightMm);
+
+            if (!useSinglePage && page2Ref.current) {
+                const img2 = await htmlToImage.toJpeg(page2Ref.current, exportOpts);
+                pdf.addPage([widthMm, heightMm], 'landscape');
+                pdf.addImage(img2, 'JPEG', 0, 0, widthMm, heightMm);
+            }
+
             pdf.save('midia-avulsa-mapa.pdf');
             setIsCopied(true);
             setTimeout(() => setIsCopied(false), 2000);
@@ -536,30 +545,36 @@ export default function MidiaAvulsaPage({ onBack }) {
                 ) : (
                     <div className="slide-scale-wrapper">
                         <div ref={page1Ref}>
-                            <MidiaAvulsaCardLandscape
-                                praca={pracaLabel}
-                                tableRows={enrichedRows}
-                                secondsCards={secondsCards}
-                                numVisibleCards={numVisibleCards}
-                                totalVisualizacoes={totalVisualizacoes}
-                                month={monthLabel}
-                            />
-                        </div>
-                        <div ref={page2Ref}>
                             <MapaInsercoes
                                 pracaLabel={pracaLabel}
                                 monthLabel={monthLabel}
                                 year={mapYear}
                                 monthIndex={mapMonthIndex}
                                 daysInMonth={mapDaysInMonth}
-                                mapRows={mapRows}
+                                rows={enrichedRows}
                                 programas={db.programas}
+                                activeSecondsList={secondsCards}
                                 onToggleDay={handleToggleDay}
                                 onAddRow={handleAddMapRow}
                                 onDeleteRow={handleDeleteMapRow}
                                 maxRows={MAX_ROWS}
+                                compact={useSinglePage}
+                                showResumo={useSinglePage}
+                                resumoProps={{ totalVisualizacoes, secondsCards, numVisibleCards }}
                             />
                         </div>
+                        {!useSinglePage && (
+                            <div ref={page2Ref}>
+                                <ResumoSlidePage
+                                    pracaLabel={pracaLabel}
+                                    monthLabel={monthLabel}
+                                    year={mapYear}
+                                    totalVisualizacoes={totalVisualizacoes}
+                                    secondsCards={secondsCards}
+                                    numVisibleCards={numVisibleCards}
+                                />
+                            </div>
+                        )}
                     </div>
                 )}
 

@@ -1,24 +1,38 @@
 import React, { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
+import { formatMoney } from '../utils/cardHelpers';
+import ResumoSlide from './ResumoSlide';
 
 const WEEKDAY_LETTERS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']; // Dom, Seg, Ter, Qua, Qui, Sex, Sáb (getDay() index)
+const LABEL_COL = 130;
+const HORARIO_COL = 52;
+const QTD_COL = 40;
+const PRICE_COL = 68;
 
-// Slide (paisagem) — página 2: grade de calendário editável. O usuário clica nas células
-// pra marcar em quais dias cada programa vai ao ar. É ao mesmo tempo a interface de
-// entrada de dados e a peça exportada pro cliente (por isso os controles de edição têm
-// a classe "no-export", excluída na hora de gerar a imagem/PDF).
+// Tabela unificada (mapa + preços por secundagem): o usuário clica nas células
+// pra marcar em quais dias cada programa vai ao ar — é ao mesmo tempo a interface
+// de entrada de dados e a peça exportada pro cliente (por isso os controles de
+// edição têm a classe "no-export", excluída na hora de gerar a imagem/PDF).
+//
+// Quando showResumo=true, o bloco de visualizações/preços/observações (mesmo
+// conteúdo de ResumoSlidePage) é renderizado logo abaixo da tabela, na mesma
+// página — usado quando o nº de programas cabe numa página só.
 const MapaInsercoes = ({
     pracaLabel,
     monthLabel,
     year,
     monthIndex, // 0-11
     daysInMonth,
-    mapRows,
+    rows, // [{ sigla, days, programa, horario, valor10, valor15, valor30 }]
     programas,
+    activeSecondsList, // [{ segundos, ... }] — quais colunas de preço mostrar
     onToggleDay,
     onAddRow,
     onDeleteRow,
     maxRows,
+    compact = true, // linhas compactas (quando a tabela divide a página com o resumo)
+    showResumo = false,
+    resumoProps,
 }) => {
     const [busca, setBusca] = useState('');
     const [buscaFocused, setBuscaFocused] = useState(false);
@@ -34,9 +48,13 @@ const MapaInsercoes = ({
     });
 
     const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-    const atLimit = mapRows.length >= maxRows;
+    const atLimit = rows.length >= maxRows;
 
-    const gridTemplate = `150px repeat(${daysInMonth}, 1fr) 44px`;
+    const rowHeight = compact ? 18 : 28;
+    const rowFontSize = compact ? '0.56rem' : '0.68rem';
+    const rowMinHeight = compact ? 22 : 34;
+
+    const gridTemplate = `${LABEL_COL}px ${HORARIO_COL}px repeat(${daysInMonth}, 1fr) ${QTD_COL}px ${activeSecondsList.map(() => `${PRICE_COL}px`).join(' ')}`;
 
     const handlePick = (sigla) => {
         onAddRow(sigla);
@@ -60,9 +78,9 @@ const MapaInsercoes = ({
             fontFamily: "'Outfit', sans-serif",
         }}>
             {/* Header */}
-            <div style={{ textAlign: 'center', marginBottom: '1rem', position: 'relative', flex: 'none' }}>
+            <div style={{ textAlign: 'center', marginBottom: '0.9rem', position: 'relative', flex: 'none' }}>
                 <div style={{ fontSize: '1.1rem', fontWeight: 400, letterSpacing: '2px', color: 'var(--primary)' }}>
-                    MAPA DE INSERÇÕES
+                    MÍDIA AVULSA
                 </div>
                 <div style={{ fontSize: '1.3rem', fontWeight: 300, fontStyle: 'italic', color: 'var(--primary)', textTransform: 'uppercase' }}>
                     PRAÇA {pracaLabel}
@@ -79,22 +97,26 @@ const MapaInsercoes = ({
             </div>
 
             {/* Grid */}
-            <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+            <div style={{ flex: 'none' }}>
                 {/* Day numbers */}
                 <div style={{ display: 'grid', gridTemplateColumns: gridTemplate, fontSize: '0.5rem', fontWeight: 700, color: '#111' }}>
                     <div />
+                    <div />
                     {days.map(d => (
-                        <div key={d} style={{ textAlign: 'center', padding: '0.15rem 0' }}>{d}</div>
+                        <div key={d} style={{ textAlign: 'center', padding: '0.12rem 0' }}>{d}</div>
                     ))}
                     <div />
+                    {activeSecondsList.map(sc => <div key={sc.segundos} />)}
                 </div>
-                {/* Weekday letters */}
+                {/* Weekday letters + column headers */}
                 <div style={{
                     display: 'grid', gridTemplateColumns: gridTemplate,
                     fontSize: '0.48rem', fontWeight: 600, color: '#666',
-                    borderBottom: '2px solid var(--primary)', paddingBottom: '0.25rem', marginBottom: '0.15rem',
+                    borderBottom: '2px solid var(--primary)', paddingBottom: '0.2rem', marginBottom: '0.1rem',
+                    alignItems: 'center',
                 }}>
                     <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#111', textTransform: 'uppercase' }}>Programa</div>
+                    <div style={{ fontSize: '0.5rem', fontWeight: 800, color: '#111', textTransform: 'uppercase', textAlign: 'center' }}>Horário</div>
                     {days.map(d => {
                         const dow = new Date(year, monthIndex, d).getDay();
                         const isWeekend = dow === 0 || dow === 6;
@@ -105,58 +127,66 @@ const MapaInsercoes = ({
                         );
                     })}
                     <div style={{ textAlign: 'center', fontSize: '0.5rem', fontWeight: 800, color: '#111' }}>QTD</div>
+                    {activeSecondsList.map(sc => (
+                        <div key={sc.segundos} style={{ textAlign: 'right', fontSize: '0.5rem', fontWeight: 800, color: '#111' }}>
+                            {sc.segundos}S
+                        </div>
+                    ))}
                 </div>
 
                 {/* Program rows */}
-                {mapRows.map((row, rowIdx) => {
-                    const prog = programas.find(p => String(p.sigla).trim() === String(row.sigla).trim()) || {};
-                    return (
-                        <div key={rowIdx} style={{
-                            display: 'grid', gridTemplateColumns: gridTemplate,
-                            alignItems: 'center', minHeight: '22px',
-                            backgroundColor: rowIdx % 2 === 0 ? 'rgba(90,28,219,0.04)' : 'transparent',
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', overflow: 'hidden' }}>
-                                <button
-                                    className="no-export"
-                                    onClick={() => onDeleteRow(rowIdx)}
-                                    style={{
-                                        background: 'none', border: 'none', cursor: 'pointer',
-                                        padding: 0, color: '#e74c3c', flexShrink: 0, display: 'flex',
-                                    }}
-                                    title="Remover"
-                                >
-                                    <Trash2 size={10} />
-                                </button>
-                                <span style={{
-                                    fontSize: '0.56rem', fontWeight: 700, color: '#333',
-                                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                                }} title={prog.programa || row.sigla}>
-                                    {prog.programa || row.sigla}
-                                </span>
-                            </div>
-                            {days.map(d => {
-                                const marked = row.days.includes(d);
-                                const dow = new Date(year, monthIndex, d).getDay();
-                                const isWeekend = dow === 0 || dow === 6;
-                                return (
-                                    <div
-                                        key={d}
-                                        onClick={() => onToggleDay(rowIdx, d)}
-                                        style={{
-                                            height: '18px', margin: '1px',
-                                            borderRadius: '3px', cursor: 'pointer',
-                                            backgroundColor: marked ? 'var(--primary)' : (isWeekend ? '#f1eefc' : '#f4f4f6'),
-                                        }}
-                                    />
-                                );
-                            })}
-                            <div style={{ textAlign: 'center', fontSize: '0.56rem', fontWeight: 800, color: 'var(--primary)' }}>
-                                {row.days.length}
-                            </div>
+                {rows.map((row, rowIdx) => (
+                    <div key={rowIdx} style={{
+                        display: 'grid', gridTemplateColumns: gridTemplate,
+                        alignItems: 'center', minHeight: `${rowMinHeight}px`,
+                        backgroundColor: rowIdx % 2 === 0 ? 'rgba(90,28,219,0.04)' : 'transparent',
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', overflow: 'hidden' }}>
+                            <button
+                                className="no-export"
+                                onClick={() => onDeleteRow(rowIdx)}
+                                style={{
+                                    background: 'none', border: 'none', cursor: 'pointer',
+                                    padding: 0, color: '#e74c3c', flexShrink: 0, display: 'flex',
+                                }}
+                                title="Remover"
+                            >
+                                <Trash2 size={10} />
+                            </button>
+                            <span style={{
+                                fontSize: rowFontSize, fontWeight: 700, color: '#333',
+                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                            }} title={row.programa}>
+                                {row.programa}
+                            </span>
                         </div>
-                    );
-                })}
+                        <div style={{ textAlign: 'center', fontSize: rowFontSize, color: '#333' }}>{row.horario}</div>
+                        {days.map(d => {
+                            const marked = row.days.includes(d);
+                            const dow = new Date(year, monthIndex, d).getDay();
+                            const isWeekend = dow === 0 || dow === 6;
+                            return (
+                                <div
+                                    key={d}
+                                    onClick={() => onToggleDay(rowIdx, d)}
+                                    style={{
+                                        height: `${rowHeight}px`, margin: '1px',
+                                        borderRadius: '3px', cursor: 'pointer',
+                                        backgroundColor: marked ? 'var(--primary)' : (isWeekend ? '#f1eefc' : '#f4f4f6'),
+                                    }}
+                                />
+                            );
+                        })}
+                        <div style={{ textAlign: 'center', fontSize: rowFontSize, fontWeight: 800, color: 'var(--primary)' }}>
+                            {row.days.length}
+                        </div>
+                        {activeSecondsList.map(sc => (
+                            <div key={sc.segundos} style={{ textAlign: 'right', fontSize: rowFontSize, fontWeight: 600, color: '#333' }}>
+                                {formatMoney(row[`valor${sc.segundos}`], 2)}
+                            </div>
+                        ))}
+                    </div>
+                ))}
 
                 {/* Add row */}
                 <div className="no-export" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.5rem', position: 'relative' }}>
@@ -208,6 +238,12 @@ const MapaInsercoes = ({
                     )}
                 </div>
             </div>
+
+            {showResumo && (
+                <div style={{ marginTop: '1.2rem' }}>
+                    <ResumoSlide {...resumoProps} />
+                </div>
+            )}
         </div>
     );
 };
