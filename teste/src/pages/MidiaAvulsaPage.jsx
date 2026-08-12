@@ -149,9 +149,14 @@ export default function MidiaAvulsaPage({ onBack }) {
     const enrichedRows = sourceRows.map(row => {
         const prog = db.programas.find(p => String(p.sigla).trim() === String(row.sigla).trim()) || {};
         const colKey = selectedMonthOffset ? `${selectedPraca}${selectedMonthOffset}` : selectedPraca;
-        const valor30 = parseNum(prog[colKey]) * row.insercoes;
+        const unitValor30 = parseNum(prog[colKey]);
+        const valor30 = unitValor30 * row.insercoes;
         const coef15 = parseNum(prog.coeficiente_15);
         const coef10 = parseNum(prog.coeficiente_10);
+        // Correct formula: valor - (valor * (1 - coeficiente)) — mesma fórmula aplicada
+        // ao valor unitário, pra manter total = unitário × inserções em qualquer segundagem.
+        const unitValor15 = unitValor30 - (unitValor30 * (1 - coef15));
+        const unitValor10 = unitValor30 - (unitValor30 * (1 - coef10));
         return {
             programa: prog.programa || row.sigla,
             dias: prog.dias || '—',
@@ -159,9 +164,11 @@ export default function MidiaAvulsaPage({ onBack }) {
             insercoes: row.insercoes,
             days: row.days || [],
             valor30,
-            // Correct formula: valor - (valor * (1 - coeficiente))
-            valor15: valor30 - (valor30 * (1 - coef15)),
-            valor10: valor30 - (valor30 * (1 - coef10)),
+            valor15: unitValor15 * row.insercoes,
+            valor10: unitValor10 * row.insercoes,
+            unitValor30,
+            unitValor15,
+            unitValor10,
             audienciaRvd: parseNum(prog.audiencia_rvd),
         };
     });

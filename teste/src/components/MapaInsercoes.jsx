@@ -7,7 +7,18 @@ const WEEKDAY_LETTERS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']; // Dom, Seg, Ter, Q
 const LABEL_COL = 130;
 const HORARIO_COL = 52;
 const QTD_COL = 40;
-const PRICE_COL = 68;
+const UNIT_COL = 52;
+const TOTAL_COL = 60;
+
+// Fundo dos dias não marcados: mais escuro que o branco da página pra ficar fácil
+// de enxergar onde clicar; fins de semana ganham um laranja translúcido, separando
+// visualmente as semanas.
+const UNFILLED_WEEKDAY = '#e2e2e9';
+const UNFILLED_WEEKEND = 'rgba(249,115,22,0.24)';
+const HEADER_WEEKEND_TINT = 'rgba(249,115,22,0.12)';
+// Cada segundagem (15s, 30s...) recebe um tom de cinza levemente diferente nas
+// colunas de preço, pra não confundir o olho ao "dar zoom out" na tabela.
+const GROUP_BG = ['#f7f7f9', '#edeef1'];
 
 // Tabela unificada (mapa + preços por secundagem): o usuário clica nas células
 // pra marcar em quais dias cada programa vai ao ar — é ao mesmo tempo a interface
@@ -54,7 +65,7 @@ const MapaInsercoes = ({
     const rowFontSize = compact ? '0.56rem' : '0.68rem';
     const rowMinHeight = compact ? 22 : 34;
 
-    const gridTemplate = `${LABEL_COL}px ${HORARIO_COL}px repeat(${daysInMonth}, 1fr) ${QTD_COL}px ${activeSecondsList.map(() => `${PRICE_COL}px`).join(' ')}`;
+    const gridTemplate = `${LABEL_COL}px ${HORARIO_COL}px repeat(${daysInMonth}, 1fr) ${QTD_COL}px ${activeSecondsList.map(() => `${UNIT_COL}px ${TOTAL_COL}px`).join(' ')}`;
 
     const handlePick = (sigla) => {
         onAddRow(sigla);
@@ -106,7 +117,12 @@ const MapaInsercoes = ({
                         <div key={d} style={{ textAlign: 'center', padding: '0.12rem 0' }}>{d}</div>
                     ))}
                     <div />
-                    {activeSecondsList.map(sc => <div key={sc.segundos} />)}
+                    {activeSecondsList.map(sc => (
+                        <React.Fragment key={sc.segundos}>
+                            <div />
+                            <div />
+                        </React.Fragment>
+                    ))}
                 </div>
                 {/* Weekday letters + column headers */}
                 <div style={{
@@ -121,16 +137,25 @@ const MapaInsercoes = ({
                         const dow = new Date(year, monthIndex, d).getDay();
                         const isWeekend = dow === 0 || dow === 6;
                         return (
-                            <div key={d} style={{ textAlign: 'center', color: isWeekend ? '#999' : '#666' }}>
+                            <div key={d} style={{
+                                textAlign: 'center', color: isWeekend ? '#c2570f' : '#666',
+                                backgroundColor: isWeekend ? HEADER_WEEKEND_TINT : 'transparent',
+                                borderRadius: '3px',
+                            }}>
                                 {WEEKDAY_LETTERS[dow]}
                             </div>
                         );
                     })}
                     <div style={{ textAlign: 'center', fontSize: '0.5rem', fontWeight: 800, color: '#111' }}>QTD</div>
-                    {activeSecondsList.map(sc => (
-                        <div key={sc.segundos} style={{ textAlign: 'right', fontSize: '0.5rem', fontWeight: 800, color: '#111' }}>
-                            {sc.segundos}S
-                        </div>
+                    {activeSecondsList.map((sc, gi) => (
+                        <React.Fragment key={sc.segundos}>
+                            <div style={{ textAlign: 'right', fontSize: '0.44rem', fontWeight: 800, color: '#111', backgroundColor: GROUP_BG[gi % 2], padding: '0.1rem 0.15rem 0.1rem 0', borderRadius: '3px 0 0 3px' }}>
+                                {sc.segundos}S UN
+                            </div>
+                            <div style={{ textAlign: 'right', fontSize: '0.44rem', fontWeight: 800, color: '#111', backgroundColor: GROUP_BG[gi % 2], padding: '0.1rem 0.15rem', borderRadius: '0 3px 3px 0' }}>
+                                {sc.segundos}S TOT
+                            </div>
+                        </React.Fragment>
                     ))}
                 </div>
 
@@ -172,7 +197,7 @@ const MapaInsercoes = ({
                                     style={{
                                         height: `${rowHeight}px`, margin: '1px',
                                         borderRadius: '3px', cursor: 'pointer',
-                                        backgroundColor: marked ? 'var(--primary)' : (isWeekend ? '#f1eefc' : '#f4f4f6'),
+                                        backgroundColor: marked ? 'var(--primary)' : (isWeekend ? UNFILLED_WEEKEND : UNFILLED_WEEKDAY),
                                     }}
                                 />
                             );
@@ -180,10 +205,15 @@ const MapaInsercoes = ({
                         <div style={{ textAlign: 'center', fontSize: rowFontSize, fontWeight: 800, color: 'var(--primary)' }}>
                             {row.days.length}
                         </div>
-                        {activeSecondsList.map(sc => (
-                            <div key={sc.segundos} style={{ textAlign: 'right', fontSize: rowFontSize, fontWeight: 600, color: '#333' }}>
-                                {formatMoney(row[`valor${sc.segundos}`], 2)}
-                            </div>
+                        {activeSecondsList.map((sc, gi) => (
+                            <React.Fragment key={sc.segundos}>
+                                <div style={{ textAlign: 'right', fontSize: rowFontSize, fontWeight: 500, color: '#555', backgroundColor: GROUP_BG[gi % 2], padding: '0 0.15rem 0 0' }}>
+                                    {formatMoney(row[`unitValor${sc.segundos}`], 2)}
+                                </div>
+                                <div style={{ textAlign: 'right', fontSize: rowFontSize, fontWeight: 700, color: '#333', backgroundColor: GROUP_BG[gi % 2], padding: '0 0.15rem' }}>
+                                    {formatMoney(row[`valor${sc.segundos}`], 2)}
+                                </div>
+                            </React.Fragment>
                         ))}
                     </div>
                 ))}
