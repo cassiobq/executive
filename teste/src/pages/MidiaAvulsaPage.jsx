@@ -81,7 +81,7 @@ const Toggle = ({ checked, onChange }) => (
     </div>
 );
 
-export default function MidiaAvulsaPage({ onBack }) {
+export default function MidiaAvulsaPage({ onBack, active }) {
     const [loading, setLoading] = useState(true);
     const [db, setDb] = useState({ programas: [], patrocinios: [] });
 
@@ -118,6 +118,22 @@ export default function MidiaAvulsaPage({ onBack }) {
             setLoading(false);
         });
     }, []);
+
+    // Formato Slide: em telas pequenas, abandona o layout mobile (sidebar em bandeja,
+    // mapa reduzido) e força o layout de desktop, navegado via pinça/zoom nativo do
+    // navegador — precisão de toque pra editar célula a célula não é viável reduzido.
+    useEffect(() => {
+        const zoomActive = Boolean(active) && formato === 'slide';
+        const meta = document.querySelector('meta[name="viewport"]');
+        const DEFAULT_VIEWPORT = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0';
+        const ZOOM_VIEWPORT = 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=1';
+        if (meta) meta.setAttribute('content', zoomActive ? ZOOM_VIEWPORT : DEFAULT_VIEWPORT);
+        document.documentElement.classList.toggle('slide-desktop-mode', zoomActive);
+        return () => {
+            if (meta) meta.setAttribute('content', DEFAULT_VIEWPORT);
+            document.documentElement.classList.remove('slide-desktop-mode');
+        };
+    }, [active, formato]);
 
     // Ao trocar de mês, remove marcações de dias que não existem no novo mês (ex: dia 31 num mês de 30)
     useEffect(() => {
@@ -368,7 +384,7 @@ export default function MidiaAvulsaPage({ onBack }) {
     const atLimit = tableRows.length >= MAX_ROWS;
 
     return (
-        <div className="app-container">
+        <div className="app-container midia-avulsa-app">
             {isMobileTrayOpen && (
                 <div className="mobile-overlay" onClick={() => setIsMobileTrayOpen(false)} />
             )}

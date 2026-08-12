@@ -426,6 +426,93 @@ body {
   }
 }
 
+/* ==============================
+   SLIDE FORMAT ON MOBILE: NO MOBILE LAYOUT
+   Toggled via the "slide-desktop-mode" class on <html> (MidiaAvulsaPage) whenever
+   the Slide format is active on a small screen. Editing the map cell-by-cell needs
+   the real desktop layout at full size — reachable by native pinch-zoom + pan
+   (enabled by the dynamic viewport meta) instead of a shrunk-down mobile view.
+   touch-action: pinch-zoom allows the pinch gesture but blocks 1-finger panning,
+   so a stray touch never scrolls the page while the user taps a cell to edit it.
+   ============================== */
+@media (max-width: 768px) {
+  html.slide-desktop-mode,
+  html.slide-desktop-mode body {
+    height: auto;
+    overflow: visible;
+    touch-action: pinch-zoom;
+  }
+
+  html.slide-desktop-mode #root>div {
+    overflow: visible !important;
+  }
+
+  /* Tudo abaixo é escopado em ".midia-avulsa-app" (só existe na página Mídia
+     Avulsa) — o app mantém as 5 páginas sempre montadas (só opacity/pointer-events
+     alternam), então um seletor genérico ".sidebar"/".main-content" vazaria pra
+     Patrocínio/Pesquisa Rápida enquanto ficam escondidas ao fundo. */
+  html.slide-desktop-mode .page-wrapper:has(.midia-avulsa-app) {
+    height: auto;
+    overflow: visible;
+    touch-action: pinch-zoom;
+  }
+
+  html.slide-desktop-mode .midia-avulsa-app {
+    height: auto;
+    overflow: visible;
+    touch-action: pinch-zoom;
+    flex-direction: row;
+    width: max-content;
+    min-width: 100%;
+  }
+
+  html.slide-desktop-mode .midia-avulsa-app .desktop-only {
+    display: flex !important;
+  }
+
+  html.slide-desktop-mode .midia-avulsa-app .sidebar {
+    position: static;
+    width: 400px;
+    flex: 0 0 400px;
+    height: auto;
+    max-height: none;
+    transform: none;
+    border-radius: 0;
+    box-shadow: var(--shadow-sm);
+    padding: 2rem;
+    overflow-y: visible;
+  }
+
+  html.slide-desktop-mode .midia-avulsa-app .main-content {
+    flex: 0 0 auto;
+    width: max-content;
+    padding: 2rem;
+    overflow: visible;
+  }
+
+  html.slide-desktop-mode .midia-avulsa-app .slide-scale-wrapper {
+    transform: none;
+    height: auto;
+    margin-top: 0;
+  }
+
+  html.slide-desktop-mode .midia-avulsa-app .mobile-tray-toggle,
+  html.slide-desktop-mode .midia-avulsa-app .mobile-home-btn,
+  html.slide-desktop-mode .midia-avulsa-app .sidebar-header-mobile,
+  html.slide-desktop-mode .midia-avulsa-app .close-tray-btn,
+  html.slide-desktop-mode .midia-avulsa-app .mobile-overlay {
+    display: none !important;
+  }
+
+  html.slide-desktop-mode .midia-avulsa-app .mobile-floating-actions {
+    position: static;
+    transform: none;
+    width: auto;
+    max-width: none;
+    margin: 1rem auto;
+  }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

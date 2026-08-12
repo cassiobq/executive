@@ -32,7 +32,7 @@ export default function App() {
         <PatrocinioPage onBack={() => setPage('home')} />
       </div>
       <div style={pageStyle(page === 'midia-avulsa')} className="page-wrapper">
-        <MidiaAvulsaPage onBack={() => setPage('home')} />
+        <MidiaAvulsaPage onBack={() => setPage('home')} active={page === 'midia-avulsa'} />
       </div>
       <div style={pageStyle(page === 'pesquisa-rapida')} className="page-wrapper">
         <PesquisaRapidaPage onBack={() => setPage('home')} />
