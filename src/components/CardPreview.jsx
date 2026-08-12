@@ -1,17 +1,5 @@
 import React from 'react';
-
-// Helper to calculate discounted price
-const calculatePrice = (base, percent) => {
-    const b = Number(base);
-    const p = Number(percent);
-    if (isNaN(b) || isNaN(p)) return 0;
-    return b - (b * (p / 100));
-};
-
-const formatMoney = (val) => {
-    if (val === undefined || val === null || isNaN(Number(val))) return '0';
-    return Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-};
+import { formatMoney, calculatePrice } from '../utils/cardHelpers';
 
 const CardPreview = ({ data, cards, veiculacaoG1 }) => {
     if (!data) return null;

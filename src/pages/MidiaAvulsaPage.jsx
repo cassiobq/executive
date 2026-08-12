@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Settings2, Check, Camera, Plus, Trash2, Home } from 'lucide-react';
+import { ArrowLeft, Settings2, Check, Camera, Plus, Trash2, Home, FileDown } from 'lucide-react';
 import { fetchAllSheetData } from '../services/sheetsService';
 import MidiaAvulsaCard from '../components/MidiaAvulsaCard';
+import MidiaAvulsaCardLandscape from '../components/MidiaAvulsaCardLandscape';
+import MapaInsercoes from '../components/MapaInsercoes';
 
 const parseNum = (val) => {
     if (!val) return 0;
@@ -41,6 +43,18 @@ const getNextMonths = () => {
     });
 };
 
+// Resolve um offset ('', '_2', '_3', '_4') pro mês/ano real e nº de dias daquele mês,
+// a partir de hoje — mesmo índice usado em getNextMonths().
+const resolveMonthYear = (offset) => {
+    const i = offset === '' ? 0 : parseInt(offset.slice(1), 10) - 1;
+    const now = new Date();
+    const base = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const monthIndex = base.getMonth();
+    const year = base.getFullYear();
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+    return { monthIndex, year, daysInMonth, label: MONTH_NAMES[monthIndex] };
+};
+
 // Toggle switch component
 const Toggle = ({ checked, onChange }) => (
     <div
@@ -71,6 +85,8 @@ export default function MidiaAvulsaPage({ onBack }) {
     const [availableMonths] = useState(getNextMonths());
     const [selectedMonthOffset, setSelectedMonthOffset] = useState('');
     const [tableRows, setTableRows] = useState([]);
+    const [formato, setFormato] = useState('card'); // 'card' | 'slide'
+    const [mapRows, setMapRows] = useState([]); // [{ sigla, days: number[] }] — usado no formato slide
 
     // Searchbox state
     const [busca, setBusca] = useState('');
@@ -89,6 +105,8 @@ export default function MidiaAvulsaPage({ onBack }) {
     const [isCopied, setIsCopied] = useState(false);
     const [isFlashing, setIsFlashing] = useState(false);
     const cardRef = useRef(null);
+    const page1Ref = useRef(null);
+    const page2Ref = useRef(null);
 
     useEffect(() => {
         fetchAllSheetData().then(res => {
@@ -97,9 +115,16 @@ export default function MidiaAvulsaPage({ onBack }) {
         });
     }, []);
 
+    // Ao trocar de mês, remove marcações de dias que não existem no novo mês (ex: dia 31 num mês de 30)
+    useEffect(() => {
+        const { daysInMonth } = resolveMonthYear(selectedMonthOffset);
+        setMapRows(prev => prev.map(row => ({ ...row, days: row.days.filter(d => d <= daysInMonth) })));
+    }, [selectedMonthOffset]);
+
     // --- Derived data ---
     const pracaLabel = PRACAS.find(p => p.key === selectedPraca)?.label || selectedPraca;
     const monthLabel = availableMonths.find(m => m.offset === selectedMonthOffset)?.label || '';
+    const { monthIndex: mapMonthIndex, year: mapYear, daysInMonth: mapDaysInMonth } = resolveMonthYear(selectedMonthOffset);
 
     const siglasOptions = db.programas
         .filter(p => p.sigla)
@@ -111,7 +136,13 @@ export default function MidiaAvulsaPage({ onBack }) {
         return String(p.sigla).toLowerCase().includes(q) || String(p.programa).toLowerCase().includes(q);
     });
 
-    const enrichedRows = tableRows.map(row => {
+    // No formato slide, as "inserções" de cada linha são derivadas da contagem de dias
+    // marcados no mapa (page 2), em vez do número digitado na sidebar (formato card).
+    const sourceRows = formato === 'slide'
+        ? mapRows.map(r => ({ sigla: r.sigla, insercoes: r.days.length }))
+        : tableRows;
+
+    const enrichedRows = sourceRows.map(row => {
         const prog = db.programas.find(p => String(p.sigla).trim() === String(row.sigla).trim()) || {};
         const colKey = selectedMonthOffset ? `${selectedPraca}${selectedMonthOffset}` : selectedPraca;
         const valor30 = parseNum(prog[colKey]) * row.insercoes;
@@ -169,6 +200,24 @@ export default function MidiaAvulsaPage({ onBack }) {
         setTableRows(prev => prev.filter((_, i) => i !== idx));
     };
 
+    const handleAddMapRow = (sigla) => {
+        if (!sigla || mapRows.length >= MAX_ROWS) return;
+        setMapRows(prev => [...prev, { sigla, days: [] }]);
+    };
+
+    const handleDeleteMapRow = (idx) => {
+        setMapRows(prev => prev.filter((_, i) => i !== idx));
+    };
+
+    const handleToggleDay = (rowIdx, day) => {
+        setMapRows(prev => prev.map((row, i) => {
+            if (i !== rowIdx) return row;
+            const has = row.days.includes(day);
+            const days = has ? row.days.filter(d => d !== day) : [...row.days, day].sort((a, b) => a - b);
+            return { ...row, days };
+        }));
+    };
+
     const toggleSeconds = (s) => {
         const activeCount = Object.values(activeSeconds).filter(v => v.active).length;
         if (activeSeconds[s]?.active && activeCount <= 1) return; // Cannot disable last card
@@ -208,6 +257,37 @@ export default function MidiaAvulsaPage({ onBack }) {
             } catch {
                 alert('Erro ao salvar imagem. Tente novamente.');
             }
+        }
+    };
+
+    const handleExportPdf = async () => {
+        if (!page1Ref.current || !page2Ref.current) return;
+        setIsFlashing(true);
+        setTimeout(() => setIsFlashing(false), 400);
+        try {
+            const htmlToImage = await import('html-to-image');
+            const { jsPDF } = await import('jspdf');
+            const exportOpts = {
+                quality: 0.92,
+                pixelRatio: 2,
+                backgroundColor: '#ffffff',
+                filter: (node) => !node.classList?.contains('no-export'),
+            };
+            const [img1, img2] = await Promise.all([
+                htmlToImage.toJpeg(page1Ref.current, exportOpts),
+                htmlToImage.toJpeg(page2Ref.current, exportOpts),
+            ]);
+            const widthMm = 297;
+            const heightMm = 210;
+            const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [widthMm, heightMm], compress: true });
+            pdf.addImage(img1, 'JPEG', 0, 0, widthMm, heightMm);
+            pdf.addPage([widthMm, heightMm], 'landscape');
+            pdf.addImage(img2, 'JPEG', 0, 0, widthMm, heightMm);
+            pdf.save('midia-avulsa-mapa.pdf');
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+        } catch {
+            alert('Erro ao gerar PDF. Tente novamente.');
         }
     };
 
@@ -255,6 +335,26 @@ export default function MidiaAvulsaPage({ onBack }) {
                     <ArrowLeft size={16} /> Início
                 </button>
 
+                <div className="form-group">
+                    <label>Formato</label>
+                    <div className="segmented-control">
+                        <button
+                            type="button"
+                            className={formato === 'card' ? 'active' : ''}
+                            onClick={() => setFormato('card')}
+                        >
+                            Card
+                        </button>
+                        <button
+                            type="button"
+                            className={formato === 'slide' ? 'active' : ''}
+                            onClick={() => setFormato('slide')}
+                        >
+                            Slide
+                        </button>
+                    </div>
+                </div>
+
                 <div style={{ display: 'flex', gap: '0.8rem', marginBottom: '1rem' }}>
                     <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
                         <label>Mês</label>
@@ -270,7 +370,9 @@ export default function MidiaAvulsaPage({ onBack }) {
                     </div>
                 </div>
 
-                {/* Table Builder */}
+                {/* Table Builder — só no formato Card; no Slide, os programas são adicionados direto na grade do mapa */}
+                {formato === 'card' && (
+                <>
                 <h3 style={{ marginTop: '1.5rem', marginBottom: '0.75rem' }}>
                     Programas {atLimit && <span style={{ fontSize: '0.7rem', color: '#e74c3c', fontWeight: 600 }}>(limite atingido)</span>}
                 </h3>
@@ -369,6 +471,8 @@ export default function MidiaAvulsaPage({ onBack }) {
                         })}
                     </div>
                 )}
+                </>
+                )}
 
                 {/* Seconds Cards */}
                 <h3 style={{ marginTop: '1.5rem', marginBottom: '0.75rem' }}>Cards de Preço</h3>
@@ -416,18 +520,48 @@ export default function MidiaAvulsaPage({ onBack }) {
             </aside>
 
             <main className="main-content">
-                <div className="preview-scale-wrapper">
-                    <div ref={cardRef}>
-                        <MidiaAvulsaCard
-                            praca={pracaLabel}
-                            tableRows={enrichedRows}
-                            secondsCards={secondsCards}
-                            numVisibleCards={numVisibleCards}
-                            totalVisualizacoes={totalVisualizacoes}
-                            month={monthLabel}
-                        />
+                {formato === 'card' ? (
+                    <div className="preview-scale-wrapper">
+                        <div ref={cardRef}>
+                            <MidiaAvulsaCard
+                                praca={pracaLabel}
+                                tableRows={enrichedRows}
+                                secondsCards={secondsCards}
+                                numVisibleCards={numVisibleCards}
+                                totalVisualizacoes={totalVisualizacoes}
+                                month={monthLabel}
+                            />
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="slide-scale-wrapper">
+                        <div ref={page1Ref}>
+                            <MidiaAvulsaCardLandscape
+                                praca={pracaLabel}
+                                tableRows={enrichedRows}
+                                secondsCards={secondsCards}
+                                numVisibleCards={numVisibleCards}
+                                totalVisualizacoes={totalVisualizacoes}
+                                month={monthLabel}
+                            />
+                        </div>
+                        <div ref={page2Ref}>
+                            <MapaInsercoes
+                                pracaLabel={pracaLabel}
+                                monthLabel={monthLabel}
+                                year={mapYear}
+                                monthIndex={mapMonthIndex}
+                                daysInMonth={mapDaysInMonth}
+                                mapRows={mapRows}
+                                programas={db.programas}
+                                onToggleDay={handleToggleDay}
+                                onAddRow={handleAddMapRow}
+                                onDeleteRow={handleDeleteMapRow}
+                                maxRows={MAX_ROWS}
+                            />
+                        </div>
+                    </div>
+                )}
 
                 <div className="mobile-floating-actions">
                     <button className="mobile-home-btn" onClick={onBack} title="Início">
@@ -436,14 +570,25 @@ export default function MidiaAvulsaPage({ onBack }) {
                     <button className="mobile-tray-toggle" onClick={() => setIsMobileTrayOpen(true)}>
                         <Settings2 size={24} /> Editar Card
                     </button>
-                    <button
-                        className="mobile-copy-btn"
-                        onClick={handleCopyImage}
-                        style={{ backgroundColor: isCopied ? 'rgba(10,199,91,0.85)' : '' }}
-                        title="Copiar Imagem"
-                    >
-                        {isCopied ? <Check size={22} /> : <Camera size={22} />}
-                    </button>
+                    {formato === 'card' ? (
+                        <button
+                            className="mobile-copy-btn"
+                            onClick={handleCopyImage}
+                            style={{ backgroundColor: isCopied ? 'rgba(10,199,91,0.85)' : '' }}
+                            title="Copiar Imagem"
+                        >
+                            {isCopied ? <Check size={22} /> : <Camera size={22} />}
+                        </button>
+                    ) : (
+                        <button
+                            className="mobile-copy-btn"
+                            onClick={handleExportPdf}
+                            style={{ backgroundColor: isCopied ? 'rgba(10,199,91,0.85)' : '' }}
+                            title="Baixar PDF"
+                        >
+                            {isCopied ? <Check size={22} /> : <FileDown size={22} />}
+                        </button>
+                    )}
                 </div>
             </main>
 
