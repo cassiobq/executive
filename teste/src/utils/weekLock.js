@@ -27,3 +27,13 @@ export function markQuantity(mark) {
     const n = match && match[1] ? parseInt(match[1], 10) : 1;
     return n || 1;
 }
+
+// Normaliza a digitação da marca de inserção: dígitos (quantidade) seguidos de
+// no máximo 1 letra maiúscula (código da inserção). Ex.: "2b" -> "2B", "ab" -> "A".
+// Compartilhado entre a grade desktop (MapaInsercoes) e a semanal mobile
+// (MapaInsercoesSemanal) pra garantir que os dois validam do mesmo jeito.
+export function normalizeMark(raw) {
+    const cleaned = raw.toUpperCase().replace(/[^0-9A-Z]/g, '');
+    const match = cleaned.match(/^(\d*)([A-Z]?)/);
+    return match ? match[1] + match[2] : '';
+}

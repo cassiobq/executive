@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, GripVertical, Repeat } from 'lucide-react';
 import { formatMoney } from '../utils/cardHelpers';
+import { normalizeMark } from '../utils/weekLock';
 import ResumoSlide from './ResumoSlide';
 
 const WEEKDAY_LETTERS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']; // Dom, Seg, Ter, Qua, Qui, Sex, Sáb (getDay() index)
@@ -18,14 +19,6 @@ const WEEKEND_BG = 'rgba(249,115,22,0.18)';
 // Cada segundagem (15s, 30s...) recebe um tom de cinza levemente diferente nas
 // colunas de preço, pra não confundir o olho ao "dar zoom out" na tabela.
 const GROUP_BG = ['#f7f7f9', '#edeef1'];
-
-// Normaliza a digitação da marca de inserção: dígitos (quantidade) seguidos de no
-// máximo 1 letra maiúscula (código da inserção). Ex.: "2b" -> "2B", "ab" -> "A".
-const normalizeMark = (raw) => {
-    const cleaned = raw.toUpperCase().replace(/[^0-9A-Z]/g, '');
-    const match = cleaned.match(/^(\d*)([A-Z]?)/);
-    return match ? match[1] + match[2] : '';
-};
 
 // Tabela unificada (mapa + preços por secundagem): o usuário clica numa célula pra
 // editá-la inline e digita uma letra maiúscula (opcionalmente prefixada por um
