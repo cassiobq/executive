@@ -42,7 +42,11 @@ const MapaInsercoesSemanal = ({
     const [editValue, setEditValue] = useState('');
 
     const week = weeks[weekIdx] || weeks[0];
-    const canReplicate = week.mondayDay != null && week.mondayDay - 7 >= 1;
+    // Existe uma semana anterior pra repetir sempre que não estamos na 1ª
+    // janela — mesmo quando o mês não começa numa segunda-feira e a 1ª janela
+    // é um fragmento sem mondayDay (nesse caso `week.mondayDay - 7` fica
+    // negativo mas a janela anterior ainda existe e tem dados replicáveis).
+    const canReplicate = weekIdx > 0;
     const atLimit = rows.length >= maxRows;
 
     const siglasOptions = programas
