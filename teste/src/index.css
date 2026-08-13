@@ -534,6 +534,10 @@ body {
 @media (max-width: 768px), (max-height: 500px) and (orientation: landscape) {
   .mobile-slide-editor.mobile-editing-active {
     display: block;
+    align-self: stretch;      /* stop shrink-to-fit sizing */
+    flex: 1 1 auto;
+    min-height: 0;            /* allow the flex item to shrink below content, enabling its own scroll */
+    overflow-y: auto;
   }
 
   .slide-scale-wrapper.mobile-editing-active {

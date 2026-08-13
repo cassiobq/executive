@@ -115,6 +115,7 @@ export default function MidiaAvulsaPage({ onBack, active }) {
     const cardRef = useRef(null);
     const page1Ref = useRef(null);
     const page2Ref = useRef(null);
+    const slideScaleWrapperRef = useRef(null);
 
     useEffect(() => {
         fetchAllSheetData().then(res => {
@@ -147,6 +148,31 @@ export default function MidiaAvulsaPage({ onBack, active }) {
             document.documentElement.classList.remove('slide-desktop-mode');
         };
     }, [active, formato, mobileGridView]);
+
+    // Ao entrar no modo "resumo" no mobile, o layout vira "desktop" (pinça/zoom,
+    // flex-direction: row) e o usuário aterrissa com a sidebar de 400px ocupando
+    // a tela inteira — a grade e o botão "Voltar a editar" ficam fora da viewport
+    // à direita, sem indicação de como chegar lá sem saber dar pinch-zoom-out antes.
+    // Rola a grade pra dentro da viewport assim que o layout "desktop" assentar
+    // (por isso o duplo rAF: um efeito só não é suficiente pra pegar o layout já
+    // recalculado com as classes/estilos novos aplicados). Mira em slideScaleWrapperRef
+    // (não page1Ref) porque o botão "Voltar a editar" é o 1º filho desse wrapper,
+    // antes da grade — alinhar o TOPO do wrapper (block:'start') traz os dois pra
+    // dentro da viewport juntos; alinhar o topo só da grade (page1Ref) deixava o
+    // botão, que fica acima dela, cortado pra fora por cima (verificado com Playwright).
+    useEffect(() => {
+        if (formato !== 'slide' || mobileGridView !== 'resumo') return undefined;
+        let raf2 = null;
+        const raf1 = requestAnimationFrame(() => {
+            raf2 = requestAnimationFrame(() => {
+                slideScaleWrapperRef.current?.scrollIntoView({ inline: 'center', block: 'start' });
+            });
+        });
+        return () => {
+            cancelAnimationFrame(raf1);
+            if (raf2 !== null) cancelAnimationFrame(raf2);
+        };
+    }, [formato, mobileGridView]);
 
     // Ao trocar de mês, remove marcações de dias que não existem no novo mês (ex: dia 31 num mês de 30)
     useEffect(() => {
@@ -638,7 +664,10 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                                 onShowResumo={() => setMobileGridView('resumo')}
                             />
                         </div>
-                        <div className={`slide-scale-wrapper${mobileGridView === 'editar' ? ' mobile-editing-active' : ''}`}>
+                        <div
+                            ref={slideScaleWrapperRef}
+                            className={`slide-scale-wrapper${mobileGridView === 'editar' ? ' mobile-editing-active' : ''}`}
+                        >
                             {mobileGridView === 'resumo' && (
                                 <button
                                     type="button"
