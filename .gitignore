@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Superpowers subagent-driven-development scratch workspace (ledgers, briefs, review packages)
+.superpowers/
