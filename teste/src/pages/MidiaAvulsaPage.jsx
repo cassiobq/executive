@@ -3,6 +3,7 @@ import { ArrowLeft, Settings2, Check, Camera, Plus, Trash2, Home, FileDown } fro
 import { fetchAllSheetData } from '../services/sheetsService';
 import MidiaAvulsaCard from '../components/MidiaAvulsaCard';
 import MapaInsercoes from '../components/MapaInsercoes';
+import MapaInsercoesSemanal from '../components/MapaInsercoesSemanal';
 import ResumoSlidePage from '../components/ResumoSlidePage';
 import { getAllowedWeekdays, markQuantity } from '../utils/weekLock';
 
@@ -90,6 +91,9 @@ export default function MidiaAvulsaPage({ onBack, active }) {
     const [selectedMonthOffset, setSelectedMonthOffset] = useState('');
     const [tableRows, setTableRows] = useState([]);
     const [formato, setFormato] = useState('card'); // 'card' | 'slide'
+    // No formato slide em mobile: 'editar' mostra o editor semanal novo,
+    // 'resumo' mostra a grade desktop (pinça/zoom) pra conferir preço e exportar.
+    const [mobileGridView, setMobileGridView] = useState('editar');
     const [mapRows, setMapRows] = useState([]); // [{ sigla, marks: { [day]: string } }] — usado no formato slide
 
     // Searchbox state
@@ -119,11 +123,20 @@ export default function MidiaAvulsaPage({ onBack, active }) {
         });
     }, []);
 
-    // Formato Slide: em telas pequenas, abandona o layout mobile (sidebar em bandeja,
-    // mapa reduzido) e força o layout de desktop, navegado via pinça/zoom nativo do
-    // navegador — precisão de toque pra editar célula a célula não é viável reduzido.
+    // Trocar de formato sempre volta o mobile pro modo de edição (em vez de
+    // ficar preso no modo resumo de um formato que não está mais visível).
     useEffect(() => {
-        const zoomActive = Boolean(active) && formato === 'slide';
+        setMobileGridView('editar');
+    }, [formato]);
+
+    // Formato Slide, modo "editar" (padrão em mobile): usa o editor semanal novo,
+    // com o mesmo tratamento mobile normal (sidebar em bandeja, sem pinça forçada).
+    // Formato Slide, modo "resumo" (ou desktop, onde isso não faz diferença):
+    // continua forçando o layout de desktop navegado por pinça/zoom, porque é
+    // onde o usuário confere preço/total e exporta — precisão de toque não é o
+    // ponto ali, ver o documento inteiro é.
+    useEffect(() => {
+        const zoomActive = Boolean(active) && formato === 'slide' && mobileGridView === 'resumo';
         const meta = document.querySelector('meta[name="viewport"]');
         const DEFAULT_VIEWPORT = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0';
         const ZOOM_VIEWPORT = 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=1';
@@ -133,7 +146,7 @@ export default function MidiaAvulsaPage({ onBack, active }) {
             if (meta) meta.setAttribute('content', DEFAULT_VIEWPORT);
             document.documentElement.classList.remove('slide-desktop-mode');
         };
-    }, [active, formato]);
+    }, [active, formato, mobileGridView]);
 
     // Ao trocar de mês, remove marcações de dias que não existem no novo mês (ex: dia 31 num mês de 30)
     useEffect(() => {
@@ -183,6 +196,7 @@ export default function MidiaAvulsaPage({ onBack, active }) {
         const unitValor15 = unitValor30 - (unitValor30 * (1 - coef15));
         const unitValor10 = unitValor30 - (unitValor30 * (1 - coef10));
         return {
+            sigla: row.sigla,
             programa: prog.programa || row.sigla,
             dias: prog.dias || '—',
             allowedWeekdays: getAllowedWeekdays(prog.dias),
@@ -605,9 +619,9 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                         </div>
                     </div>
                 ) : (
-                    <div className="slide-scale-wrapper">
-                        <div ref={page1Ref}>
-                            <MapaInsercoes
+                    <>
+                        <div className={`mobile-slide-editor${mobileGridView === 'editar' ? ' mobile-editing-active' : ''}`}>
+                            <MapaInsercoesSemanal
                                 pracaLabel={pracaLabel}
                                 monthLabel={monthLabel}
                                 year={mapYear}
@@ -615,31 +629,60 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                                 daysInMonth={mapDaysInMonth}
                                 rows={enrichedRows}
                                 programas={db.programas}
-                                activeSecondsList={secondsCards}
                                 onSetDayMark={handleSetDayMark}
                                 onAddRow={handleAddMapRow}
                                 onDeleteRow={handleDeleteMapRow}
                                 onReorderRows={handleReorderRows}
                                 onReplicateWeek={handleReplicateWeek}
                                 maxRows={MAX_ROWS}
-                                compact={useSinglePage}
-                                showResumo={useSinglePage}
-                                resumoProps={{ totalVisualizacoes, secondsCards, numVisibleCards }}
+                                onShowResumo={() => setMobileGridView('resumo')}
                             />
                         </div>
-                        {!useSinglePage && (
-                            <div ref={page2Ref}>
-                                <ResumoSlidePage
+                        <div className={`slide-scale-wrapper${mobileGridView === 'editar' ? ' mobile-editing-active' : ''}`}>
+                            {mobileGridView === 'resumo' && (
+                                <button
+                                    type="button"
+                                    className="mobile-back-to-editor-btn"
+                                    onClick={() => setMobileGridView('editar')}
+                                >
+                                    <ArrowLeft size={16} /> Voltar a editar
+                                </button>
+                            )}
+                            <div ref={page1Ref}>
+                                <MapaInsercoes
                                     pracaLabel={pracaLabel}
                                     monthLabel={monthLabel}
                                     year={mapYear}
-                                    totalVisualizacoes={totalVisualizacoes}
-                                    secondsCards={secondsCards}
-                                    numVisibleCards={numVisibleCards}
+                                    monthIndex={mapMonthIndex}
+                                    daysInMonth={mapDaysInMonth}
+                                    rows={enrichedRows}
+                                    programas={db.programas}
+                                    activeSecondsList={secondsCards}
+                                    onSetDayMark={handleSetDayMark}
+                                    onAddRow={handleAddMapRow}
+                                    onDeleteRow={handleDeleteMapRow}
+                                    onReorderRows={handleReorderRows}
+                                    onReplicateWeek={handleReplicateWeek}
+                                    maxRows={MAX_ROWS}
+                                    compact={useSinglePage}
+                                    showResumo={useSinglePage}
+                                    resumoProps={{ totalVisualizacoes, secondsCards, numVisibleCards }}
                                 />
                             </div>
-                        )}
-                    </div>
+                            {!useSinglePage && (
+                                <div ref={page2Ref}>
+                                    <ResumoSlidePage
+                                        pracaLabel={pracaLabel}
+                                        monthLabel={monthLabel}
+                                        year={mapYear}
+                                        totalVisualizacoes={totalVisualizacoes}
+                                        secondsCards={secondsCards}
+                                        numVisibleCards={numVisibleCards}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </>
                 )}
 
                 <div className="mobile-floating-actions">
@@ -660,7 +703,7 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                         </button>
                     ) : (
                         <button
-                            className="mobile-copy-btn"
+                            className={`mobile-copy-btn${mobileGridView === 'editar' ? ' mobile-editing-active' : ''}`}
                             onClick={handleExportPdf}
                             style={{ backgroundColor: isCopied ? 'rgba(10,199,91,0.85)' : '' }}
                             title="Baixar PDF"
