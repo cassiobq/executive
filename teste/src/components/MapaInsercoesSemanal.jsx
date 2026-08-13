@@ -46,7 +46,11 @@ const MapaInsercoesSemanal = ({
     // janela — mesmo quando o mês não começa numa segunda-feira e a 1ª janela
     // é um fragmento sem mondayDay (nesse caso `week.mondayDay - 7` fica
     // negativo mas a janela anterior ainda existe e tem dados replicáveis).
-    const canReplicate = weekIdx > 0;
+    // Checa contra weekIdx *e* weeks.length (não só weekIdx > 0) pra bater
+    // com a janela realmente exibida (`week`, que cai pra weeks[0] quando
+    // weekIdx está temporariamente fora do range — ex.: troca de mês reduz
+    // weeks.length antes do useEffect de clamp rodar nesse render).
+    const canReplicate = weekIdx > 0 && weekIdx < weeks.length;
     const atLimit = rows.length >= maxRows;
 
     const siglasOptions = programas
