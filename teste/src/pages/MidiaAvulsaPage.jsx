@@ -94,6 +94,8 @@ export default function MidiaAvulsaPage({ onBack, active }) {
     // No formato slide em mobile: 'editar' mostra o editor semanal novo,
     // 'resumo' mostra a grade desktop (pinça/zoom) pra conferir preço e exportar.
     const [mobileGridView, setMobileGridView] = useState('editar');
+    const [titulos, setTitulos] = useState([{ letra: 'A', nome: 'Campanha' }]);
+    const [tituloAtivo, setTituloAtivo] = useState('A');
     const [mapRows, setMapRows] = useState([]); // [{ sigla, marks: { [day]: string } }] — usado no formato slide
 
     // Searchbox state
@@ -324,6 +326,14 @@ export default function MidiaAvulsaPage({ onBack, active }) {
             }
             return { ...row, marks };
         }));
+    };
+
+    const handleAddTitulo = (letra) => {
+        setTitulos(prev => [...prev, { letra, nome: '' }]);
+    };
+
+    const handleRenameTitulo = (letra, novoNome) => {
+        setTitulos(prev => prev.map(t => (t.letra === letra ? { ...t, nome: novoNome } : t)));
     };
 
     const toggleSeconds = (s) => {
@@ -661,6 +671,11 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                                 onReorderRows={handleReorderRows}
                                 onReplicateWeek={handleReplicateWeek}
                                 maxRows={MAX_ROWS}
+                                titulos={titulos}
+                                tituloAtivo={tituloAtivo}
+                                onSetTituloAtivo={setTituloAtivo}
+                                onAddTitulo={handleAddTitulo}
+                                onRenameTitulo={handleRenameTitulo}
                                 onShowResumo={() => setMobileGridView('resumo')}
                             />
                         </div>
