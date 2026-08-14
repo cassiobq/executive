@@ -6,6 +6,7 @@ import MapaInsercoes from '../components/MapaInsercoes';
 import MapaInsercoesSemanal from '../components/MapaInsercoesSemanal';
 import ResumoSlidePage from '../components/ResumoSlidePage';
 import { getAllowedWeekdays, markQuantity } from '../utils/weekLock';
+import { computeTitulosUsados } from '../utils/titulos';
 
 const parseNum = (val) => {
     if (!val) return 0;
@@ -240,6 +241,8 @@ export default function MidiaAvulsaPage({ onBack, active }) {
             audienciaRvd: parseNum(prog.audiencia_rvd),
         };
     });
+
+    const titulosUsados = computeTitulosUsados(titulos, mapRows);
 
     const total30 = enrichedRows.reduce((s, r) => s + r.valor30, 0);
     const total15 = enrichedRows.reduce((s, r) => s + r.valor15, 0);
@@ -711,6 +714,7 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                                     compact={useSinglePage}
                                     showResumo={useSinglePage}
                                     resumoProps={{ totalVisualizacoes, secondsCards, numVisibleCards }}
+                                    titulosUsados={titulosUsados}
                                 />
                             </div>
                             {!useSinglePage && (
