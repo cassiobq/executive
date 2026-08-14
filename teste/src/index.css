@@ -458,7 +458,11 @@ body {
     margin: 0;
     overflow: auto;
     align-items: flex-start;
-    justify-content: center;
+    /* flex-start (not the base rule's "center"): when content is taller than
+       the viewport, centering pushes it past the flex container's start
+       edge, and that overflow isn't part of the scrollable region — scrollTop
+       gets stuck at 0 and the top of the content becomes unreachable. */
+    justify-content: flex-start;
     touch-action: manipulation;
   }
 
