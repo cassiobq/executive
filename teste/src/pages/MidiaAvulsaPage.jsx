@@ -385,7 +385,15 @@ export default function MidiaAvulsaPage({ onBack, active }) {
             const pdfBlob = pdf.output('blob');
             const pdfFile = new File([pdfBlob], 'midia-avulsa-mapa.pdf', { type: 'application/pdf' });
             if (navigator.canShare?.({ files: [pdfFile] })) {
-                await navigator.share({ files: [pdfFile], title: 'Mapa de Inserções' });
+                try {
+                    await navigator.share({ files: [pdfFile], title: 'Mapa de Inserções' });
+                } catch (shareErr) {
+                    if (shareErr?.name === 'AbortError') return; // usuário cancelou o menu de compartilhar
+                    // Compartilhar falhou/foi bloqueado (ex.: NotAllowedError do
+                    // iOS Safari) — o PDF já foi gerado com sucesso, então baixa
+                    // direto em vez de descartar o trabalho e mostrar erro genérico.
+                    pdf.save('midia-avulsa-mapa.pdf');
+                }
             } else {
                 pdf.save('midia-avulsa-mapa.pdf');
             }
@@ -749,7 +757,20 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                         ) : (
                             <button
                                 className="mobile-copy-btn"
-                                onClick={() => setExportPreviewOpen(true)}
+                                onClick={() => {
+                                    // Este botão é estilizado (e o popup de resumo só existe)
+                                    // dentro do breakpoint mobile — no desktop, sem essa
+                                    // checagem, ele injetaria o popup sem CSS e o usuário
+                                    // perderia o download direto que já existia antes.
+                                    const isMobileBreakpoint = window.matchMedia(
+                                        '(max-width: 768px), (max-height: 500px) and (orientation: landscape)'
+                                    ).matches;
+                                    if (isMobileBreakpoint) {
+                                        setExportPreviewOpen(true);
+                                    } else {
+                                        handleExportPdf();
+                                    }
+                                }}
                                 title="Ver resumo e exportar"
                             >
                                 <FileDown size={22} />
