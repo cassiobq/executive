@@ -724,32 +724,39 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                     </>
                 )}
 
-                <div className="mobile-floating-actions">
-                    <button className="mobile-home-btn" onClick={onBack} title="Início">
-                        <Home size={22} />
-                    </button>
-                    <button className="mobile-tray-toggle" onClick={() => setIsMobileTrayOpen(true)}>
-                        <Settings2 size={24} /> Editar Card
-                    </button>
-                    {formato === 'card' ? (
-                        <button
-                            className="mobile-copy-btn"
-                            onClick={handleCopyImage}
-                            style={{ backgroundColor: isCopied ? 'rgba(10,199,91,0.85)' : '' }}
-                            title="Copiar Imagem"
-                        >
-                            {isCopied ? <Check size={22} /> : <Camera size={22} />}
+                {/* Escondida enquanto o popup de exportação está aberto: o overlay
+                    (.slide-scale-wrapper.export-preview-open) é semitransparente
+                    de propósito (pra permitir pinça/zoom sobre um fundo escurecido),
+                    então essa barra fixa ficaria visível "vazando" por baixo dele
+                    em vez de coberta — não renderiza pra evitar isso. */}
+                {!exportPreviewOpen && (
+                    <div className="mobile-floating-actions">
+                        <button className="mobile-home-btn" onClick={onBack} title="Início">
+                            <Home size={22} />
                         </button>
-                    ) : (
-                        <button
-                            className="mobile-copy-btn"
-                            onClick={() => setExportPreviewOpen(true)}
-                            title="Ver resumo e exportar"
-                        >
-                            <FileDown size={22} />
+                        <button className="mobile-tray-toggle" onClick={() => setIsMobileTrayOpen(true)}>
+                            <Settings2 size={24} /> Editar Card
                         </button>
-                    )}
-                </div>
+                        {formato === 'card' ? (
+                            <button
+                                className="mobile-copy-btn"
+                                onClick={handleCopyImage}
+                                style={{ backgroundColor: isCopied ? 'rgba(10,199,91,0.85)' : '' }}
+                                title="Copiar Imagem"
+                            >
+                                {isCopied ? <Check size={22} /> : <Camera size={22} />}
+                            </button>
+                        ) : (
+                            <button
+                                className="mobile-copy-btn"
+                                onClick={() => setExportPreviewOpen(true)}
+                                title="Ver resumo e exportar"
+                            >
+                                <FileDown size={22} />
+                            </button>
+                        )}
+                    </div>
+                )}
             </main>
 
             {/* Camera flash overlay */}
