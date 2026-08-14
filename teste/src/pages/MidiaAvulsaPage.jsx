@@ -379,10 +379,21 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                 pdf.addImage(img2, 'JPEG', 0, 0, widthMm, heightMm);
             }
 
-            pdf.save('midia-avulsa-mapa.pdf');
+            // No popup mobile, tenta abrir o menu nativo de compartilhar (WhatsApp
+            // etc.) com o PDF já pronto; sem suporte (a maioria dos navegadores
+            // desktop, e alguns mobile antigos), cai pro download direto de sempre.
+            const pdfBlob = pdf.output('blob');
+            const pdfFile = new File([pdfBlob], 'midia-avulsa-mapa.pdf', { type: 'application/pdf' });
+            if (navigator.canShare?.({ files: [pdfFile] })) {
+                await navigator.share({ files: [pdfFile], title: 'Mapa de Inserções' });
+            } else {
+                pdf.save('midia-avulsa-mapa.pdf');
+            }
+
             setIsCopied(true);
             setTimeout(() => setIsCopied(false), 2000);
-        } catch {
+        } catch (err) {
+            if (err?.name === 'AbortError') return; // usuário cancelou o menu de compartilhar
             alert('Erro ao gerar PDF. Tente novamente.');
         }
     };
