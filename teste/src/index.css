@@ -314,17 +314,6 @@ body {
     height: calc(450px * 1.778 * 0.80);
   }
 
-  /* Scale the 2 landscape 1000px pages (stacked) to fit mobile width */
-  .slide-scale-wrapper {
-    transform: scale(0.36);
-    transform-origin: top center;
-    gap: 1rem;
-    padding: 1rem 0;
-    /* 2 pages (1000px * 210/297 tall each) + gap + padding, scaled down */
-    height: calc((707px * 2 + 16px + 32px) * 0.36);
-    margin-top: 1rem;
-  }
-
   .action-buttons-wrapper {
     flex-direction: column;
     padding-top: 1rem;
@@ -429,93 +418,6 @@ body {
 }
 
 /* ==============================
-   SLIDE FORMAT ON MOBILE: NO MOBILE LAYOUT
-   Toggled via the "slide-desktop-mode" class on <html> (MidiaAvulsaPage) whenever
-   the Slide format is active on a small screen. Editing the map cell-by-cell needs
-   the real desktop layout at full size — reachable by native pinch-zoom + pan
-   (enabled by the dynamic viewport meta) instead of a shrunk-down mobile view.
-   touch-action: pinch-zoom allows the pinch gesture but blocks 1-finger panning,
-   so a stray touch never scrolls the page while the user taps a cell to edit it.
-   ============================== */
-@media (max-width: 768px), (max-height: 500px) and (orientation: landscape) {
-  html.slide-desktop-mode,
-  html.slide-desktop-mode body {
-    height: auto;
-    overflow: visible;
-    touch-action: pinch-zoom;
-  }
-
-  html.slide-desktop-mode #root>div {
-    overflow: visible !important;
-  }
-
-  /* Tudo abaixo é escopado em ".midia-avulsa-app" (só existe na página Mídia
-     Avulsa) — o app mantém as 5 páginas sempre montadas (só opacity/pointer-events
-     alternam), então um seletor genérico ".sidebar"/".main-content" vazaria pra
-     Patrocínio/Pesquisa Rápida enquanto ficam escondidas ao fundo. */
-  html.slide-desktop-mode .page-wrapper:has(.midia-avulsa-app) {
-    height: auto;
-    overflow: visible;
-    touch-action: pinch-zoom;
-  }
-
-  html.slide-desktop-mode .midia-avulsa-app {
-    height: auto;
-    overflow: visible;
-    touch-action: pinch-zoom;
-    flex-direction: row;
-    width: max-content;
-    min-width: 100%;
-  }
-
-  html.slide-desktop-mode .midia-avulsa-app .desktop-only {
-    display: flex !important;
-  }
-
-  html.slide-desktop-mode .midia-avulsa-app .sidebar {
-    position: static;
-    width: 400px;
-    flex: 0 0 400px;
-    height: auto;
-    max-height: none;
-    transform: none;
-    border-radius: 0;
-    box-shadow: var(--shadow-sm);
-    padding: 2rem;
-    overflow-y: visible;
-  }
-
-  html.slide-desktop-mode .midia-avulsa-app .main-content {
-    flex: 0 0 auto;
-    width: max-content;
-    padding: 2rem;
-    overflow: visible;
-  }
-
-  html.slide-desktop-mode .midia-avulsa-app .slide-scale-wrapper {
-    transform: none;
-    height: auto;
-    margin-top: 0;
-  }
-
-  html.slide-desktop-mode .midia-avulsa-app .mobile-tray-toggle,
-  html.slide-desktop-mode .midia-avulsa-app .mobile-home-btn,
-  html.slide-desktop-mode .midia-avulsa-app .sidebar-header-mobile,
-  html.slide-desktop-mode .midia-avulsa-app .close-tray-btn,
-  html.slide-desktop-mode .midia-avulsa-app .mobile-overlay {
-    display: none !important;
-  }
-
-  html.slide-desktop-mode .midia-avulsa-app .mobile-floating-actions {
-    position: static;
-    transform: none;
-    width: auto;
-    max-width: none;
-    margin: 1rem auto;
-  }
-}
-
-/* ==============================
    MAPA DE INSERÇÕES — EDITOR SEMANAL MOBILE
    MapaInsercoesSemanal é a superfície de edição em telas pequenas: sempre
    fica escondida por padrão (regra fora de qualquer media query, então
@@ -532,7 +434,7 @@ body {
 }
 
 @media (max-width: 768px), (max-height: 500px) and (orientation: landscape) {
-  .mobile-slide-editor.mobile-editing-active {
+  .mobile-slide-editor {
     display: block;
     align-self: stretch;      /* stop shrink-to-fit sizing */
     flex: 1 1 auto;
@@ -540,12 +442,63 @@ body {
     overflow-y: auto;
   }
 
-  .slide-scale-wrapper.mobile-editing-active {
+  /* .slide-scale-wrapper (grade desktop, alvo da exportação) só aparece no
+     mobile dentro do popup — nunca "por baixo" do editor semanal. */
+  .slide-scale-wrapper {
     display: none;
   }
 
-  .mobile-copy-btn.mobile-editing-active {
-    display: none;
+  .slide-scale-wrapper.export-preview-open {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(20, 12, 36, 0.72);
+    padding: 3.5rem 1rem 2rem;
+    margin: 0;
+    overflow: auto;
+    align-items: flex-start;
+    justify-content: center;
+    touch-action: manipulation;
+  }
+
+  .export-preview-close-btn {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1001;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  }
+
+  .export-preview-share-btn {
+    position: fixed;
+    bottom: 1.25rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.4rem;
+    border-radius: 50px;
+    border: none;
+    background: var(--primary);
+    color: white;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(90, 28, 219, 0.4);
   }
 }
 
@@ -982,22 +935,6 @@ body {
   font-size: 0.78rem;
   cursor: pointer;
   white-space: nowrap;
-}
-
-.mobile-back-to-editor-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin: 0 auto 0.5rem;
-  padding: 0.5rem 0.9rem;
-  border-radius: 50px;
-  border: 1.5px solid var(--primary);
-  background: white;
-  color: var(--primary);
-  font-family: 'Outfit', sans-serif;
-  font-weight: 700;
-  font-size: 0.8rem;
-  cursor: pointer;
 }
 
 @keyframes fadeIn {

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Settings2, Check, Camera, Plus, Trash2, Home, FileDown } from 'lucide-react';
+import { ArrowLeft, Settings2, Check, Camera, Plus, Trash2, Home, FileDown, X } from 'lucide-react';
 import { fetchAllSheetData } from '../services/sheetsService';
 import MidiaAvulsaCard from '../components/MidiaAvulsaCard';
 import MapaInsercoes from '../components/MapaInsercoes';
@@ -92,11 +92,12 @@ export default function MidiaAvulsaPage({ onBack, active }) {
     const [selectedMonthOffset, setSelectedMonthOffset] = useState('');
     const [tableRows, setTableRows] = useState([]);
     const [formato, setFormato] = useState('card'); // 'card' | 'slide'
-    // No formato slide em mobile: 'editar' mostra o editor semanal novo,
-    // 'resumo' mostra a grade desktop (pinça/zoom) pra conferir preço e exportar.
-    const [mobileGridView, setMobileGridView] = useState('editar');
     const [titulos, setTitulos] = useState([{ letra: 'A', nome: 'Campanha' }]);
     const [tituloAtivo, setTituloAtivo] = useState('A');
+    // Popup de "Ver resumo e exportar" no formato slide (mobile) — mostra a
+    // grade desktop (page1Ref/page2Ref) num overlay de tela cheia, em vez de
+    // trocar a página inteira de layout como o mecanismo antigo fazia.
+    const [exportPreviewOpen, setExportPreviewOpen] = useState(false);
     const [mapRows, setMapRows] = useState([]); // [{ sigla, marks: { [day]: string } }] — usado no formato slide
 
     // Searchbox state
@@ -118,7 +119,6 @@ export default function MidiaAvulsaPage({ onBack, active }) {
     const cardRef = useRef(null);
     const page1Ref = useRef(null);
     const page2Ref = useRef(null);
-    const slideScaleWrapperRef = useRef(null);
 
     useEffect(() => {
         fetchAllSheetData().then(res => {
@@ -127,55 +127,27 @@ export default function MidiaAvulsaPage({ onBack, active }) {
         });
     }, []);
 
-    // Trocar de formato sempre volta o mobile pro modo de edição (em vez de
-    // ficar preso no modo resumo de um formato que não está mais visível).
+    // Trocar de formato sempre fecha o popup de exportação (em vez de ficar
+    // aberto sobre um formato que não está mais visível).
     useEffect(() => {
-        setMobileGridView('editar');
+        setExportPreviewOpen(false);
     }, [formato]);
 
-    // Formato Slide, modo "editar" (padrão em mobile): usa o editor semanal novo,
-    // com o mesmo tratamento mobile normal (sidebar em bandeja, sem pinça forçada).
-    // Formato Slide, modo "resumo" (ou desktop, onde isso não faz diferença):
-    // continua forçando o layout de desktop navegado por pinça/zoom, porque é
-    // onde o usuário confere preço/total e exporta — precisão de toque não é o
-    // ponto ali, ver o documento inteiro é.
+    // Enquanto o popup de exportação está aberto, libera pinça/zoom nativo do
+    // navegador pra o usuário conferir o mapa/preço por inteiro antes de
+    // compartilhar/baixar. O popup em si (.slide-scale-wrapper.export-preview-open,
+    // ver index.css) já é um overlay de tela cheia — não precisa de nenhum
+    // ajuste de layout do resto da página, só liberar o zoom.
     useEffect(() => {
-        const zoomActive = Boolean(active) && formato === 'slide' && mobileGridView === 'resumo';
+        const zoomActive = Boolean(active) && exportPreviewOpen;
         const meta = document.querySelector('meta[name="viewport"]');
         const DEFAULT_VIEWPORT = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0';
         const ZOOM_VIEWPORT = 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=1';
         if (meta) meta.setAttribute('content', zoomActive ? ZOOM_VIEWPORT : DEFAULT_VIEWPORT);
-        document.documentElement.classList.toggle('slide-desktop-mode', zoomActive);
         return () => {
             if (meta) meta.setAttribute('content', DEFAULT_VIEWPORT);
-            document.documentElement.classList.remove('slide-desktop-mode');
         };
-    }, [active, formato, mobileGridView]);
-
-    // Ao entrar no modo "resumo" no mobile, o layout vira "desktop" (pinça/zoom,
-    // flex-direction: row) e o usuário aterrissa com a sidebar de 400px ocupando
-    // a tela inteira — a grade e o botão "Voltar a editar" ficam fora da viewport
-    // à direita, sem indicação de como chegar lá sem saber dar pinch-zoom-out antes.
-    // Rola a grade pra dentro da viewport assim que o layout "desktop" assentar
-    // (por isso o duplo rAF: um efeito só não é suficiente pra pegar o layout já
-    // recalculado com as classes/estilos novos aplicados). Mira em slideScaleWrapperRef
-    // (não page1Ref) porque o botão "Voltar a editar" é o 1º filho desse wrapper,
-    // antes da grade — alinhar o TOPO do wrapper (block:'start') traz os dois pra
-    // dentro da viewport juntos; alinhar o topo só da grade (page1Ref) deixava o
-    // botão, que fica acima dela, cortado pra fora por cima (verificado com Playwright).
-    useEffect(() => {
-        if (formato !== 'slide' || mobileGridView !== 'resumo') return undefined;
-        let raf2 = null;
-        const raf1 = requestAnimationFrame(() => {
-            raf2 = requestAnimationFrame(() => {
-                slideScaleWrapperRef.current?.scrollIntoView({ inline: 'center', block: 'start' });
-            });
-        });
-        return () => {
-            cancelAnimationFrame(raf1);
-            if (raf2 !== null) cancelAnimationFrame(raf2);
-        };
-    }, [formato, mobileGridView]);
+    }, [active, exportPreviewOpen]);
 
     // Ao trocar de mês, remove marcações de dias que não existem no novo mês (ex: dia 31 num mês de 30)
     useEffect(() => {
@@ -659,7 +631,7 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                     </div>
                 ) : (
                     <>
-                        <div className={`mobile-slide-editor${mobileGridView === 'editar' ? ' mobile-editing-active' : ''}`}>
+                        <div className="mobile-slide-editor">
                             <MapaInsercoesSemanal
                                 pracaLabel={pracaLabel}
                                 monthLabel={monthLabel}
@@ -679,20 +651,18 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                                 onSetTituloAtivo={setTituloAtivo}
                                 onAddTitulo={handleAddTitulo}
                                 onRenameTitulo={handleRenameTitulo}
-                                onShowResumo={() => setMobileGridView('resumo')}
+                                onShowResumo={() => setExportPreviewOpen(true)}
                             />
                         </div>
-                        <div
-                            ref={slideScaleWrapperRef}
-                            className={`slide-scale-wrapper${mobileGridView === 'editar' ? ' mobile-editing-active' : ''}`}
-                        >
-                            {mobileGridView === 'resumo' && (
+                        <div className={`slide-scale-wrapper${exportPreviewOpen ? ' export-preview-open' : ''}`}>
+                            {exportPreviewOpen && (
                                 <button
                                     type="button"
-                                    className="mobile-back-to-editor-btn"
-                                    onClick={() => setMobileGridView('editar')}
+                                    className="export-preview-close-btn"
+                                    onClick={() => setExportPreviewOpen(false)}
+                                    aria-label="Fechar"
                                 >
-                                    <ArrowLeft size={16} /> Voltar a editar
+                                    <X size={20} />
                                 </button>
                             )}
                             <div ref={page1Ref}>
@@ -729,6 +699,16 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                                     />
                                 </div>
                             )}
+                            {exportPreviewOpen && (
+                                <button
+                                    type="button"
+                                    className="export-preview-share-btn"
+                                    onClick={handleExportPdf}
+                                >
+                                    {isCopied ? <Check size={18} /> : <FileDown size={18} />}
+                                    Exportar PDF
+                                </button>
+                            )}
                         </div>
                     </>
                 )}
@@ -751,12 +731,11 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                         </button>
                     ) : (
                         <button
-                            className={`mobile-copy-btn${mobileGridView === 'editar' ? ' mobile-editing-active' : ''}`}
-                            onClick={handleExportPdf}
-                            style={{ backgroundColor: isCopied ? 'rgba(10,199,91,0.85)' : '' }}
-                            title="Baixar PDF"
+                            className="mobile-copy-btn"
+                            onClick={() => setExportPreviewOpen(true)}
+                            title="Ver resumo e exportar"
                         >
-                            {isCopied ? <Check size={22} /> : <FileDown size={22} />}
+                            <FileDown size={22} />
                         </button>
                     )}
                 </div>
