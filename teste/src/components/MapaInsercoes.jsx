@@ -49,6 +49,7 @@ const MapaInsercoes = ({
     compact = true, // linhas compactas (quando a tabela divide a página com o resumo)
     showResumo = false,
     resumoProps,
+    titulosUsados = [], // [{ letra, nome }] — só os títulos com marcação no mapa; legenda no header
 }) => {
     const [busca, setBusca] = useState('');
     const [buscaFocused, setBuscaFocused] = useState(false);
@@ -138,6 +139,21 @@ const MapaInsercoes = ({
                     {monthLabel}/{year}
                 </div>
             </div>
+
+            {titulosUsados.length > 0 && (
+                <div style={{
+                    textAlign: 'center', marginBottom: '0.6rem',
+                    display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap',
+                    fontSize: '0.62rem', fontWeight: 700, color: '#666',
+                }}>
+                    {titulosUsados.map(t => (
+                        <span key={t.letra}>
+                            <span style={{ color: 'var(--primary)', fontWeight: 800 }}>{t.letra}</span>
+                            {t.nome ? ` — ${t.nome}` : ''}
+                        </span>
+                    ))}
+                </div>
+            )}
 
             {/* Grid */}
             <div style={{ flex: 'none' }}>

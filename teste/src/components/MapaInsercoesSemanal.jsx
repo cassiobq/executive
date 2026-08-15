@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Repeat, ArrowRight } from 'lucide-react';
+import { Plus, Trash2, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Repeat, ArrowRight, Pencil } from 'lucide-react';
 import { normalizeMark, markQuantity } from '../utils/weekLock';
 import { computeWeekWindows } from '../utils/weekWindows';
+import { getNextTituloLetter } from '../utils/titulos';
 
 // Seg..Dom, alinhado a uma semana que começa na segunda (diferente de
 // MapaInsercoes.jsx, que indexa por getDay() com domingo primeiro).
@@ -24,6 +25,11 @@ const MapaInsercoesSemanal = ({
     onReorderRows,
     onReplicateWeek,
     maxRows,
+    titulos,
+    tituloAtivo,
+    onSetTituloAtivo,
+    onAddTitulo,
+    onRenameTitulo,
     onShowResumo,
 }) => {
     const weeks = computeWeekWindows({ year, monthIndex, daysInMonth });
@@ -40,6 +46,18 @@ const MapaInsercoesSemanal = ({
     const [buscaFocused, setBuscaFocused] = useState(false);
     const [editingCell, setEditingCell] = useState(null); // { rowIdx, day } | null
     const [editValue, setEditValue] = useState('');
+    const [tituloDropdownOpen, setTituloDropdownOpen] = useState(false);
+    const [renamingLetra, setRenamingLetra] = useState(null);
+    const [renameValue, setRenameValue] = useState('');
+
+    const tituloAtivoNome = titulos.find(t => t.letra === tituloAtivo)?.nome || '';
+    const nextTituloLetter = getNextTituloLetter(titulos);
+
+    const commitRename = () => {
+        if (renamingLetra) onRenameTitulo(renamingLetra, renameValue);
+        setRenamingLetra(null);
+        setRenameValue('');
+    };
 
     const week = weeks[weekIdx] || weeks[0];
     // Existe uma semana anterior pra repetir sempre que não estamos na 1ª
@@ -123,6 +141,68 @@ const MapaInsercoesSemanal = ({
                     >
                         <Repeat size={14} /> Repetir semana anterior
                     </button>
+                )}
+            </div>
+
+            <div className="mapa-semanal-titulo-row">
+                <button
+                    type="button"
+                    className="mapa-semanal-titulo-pill"
+                    onClick={() => setTituloDropdownOpen(o => !o)}
+                >
+                    <span className="mapa-semanal-titulo-letra">{tituloAtivo}</span>
+                    {tituloAtivoNome || `Título ${tituloAtivo}`}
+                    <ChevronDown size={14} />
+                </button>
+                {tituloDropdownOpen && (
+                    <>
+                        <div className="mapa-semanal-titulo-backdrop" onClick={() => { setTituloDropdownOpen(false); commitRename(); }} />
+                        <div className="mapa-semanal-titulo-dropdown">
+                            {titulos.map(t => (
+                                <div key={t.letra} className="mapa-semanal-titulo-option">
+                                    {renamingLetra === t.letra ? (
+                                        <input
+                                            autoFocus
+                                            className="mapa-semanal-titulo-rename-input"
+                                            value={renameValue}
+                                            onChange={e => setRenameValue(e.target.value)}
+                                            onBlur={commitRename}
+                                            onKeyDown={e => {
+                                                if (e.key === 'Enter') e.currentTarget.blur();
+                                                else if (e.key === 'Escape') { setRenamingLetra(null); setRenameValue(''); }
+                                            }}
+                                        />
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            className={`mapa-semanal-titulo-option-btn${t.letra === tituloAtivo ? ' is-active' : ''}`}
+                                            onClick={() => { onSetTituloAtivo(t.letra); setTituloDropdownOpen(false); }}
+                                        >
+                                            <span className="mapa-semanal-titulo-letra">{t.letra}</span>
+                                            {t.nome || `Título ${t.letra}`}
+                                        </button>
+                                    )}
+                                    <button
+                                        type="button"
+                                        className="mapa-semanal-titulo-edit-btn"
+                                        onClick={() => { setRenamingLetra(t.letra); setRenameValue(t.nome); }}
+                                        aria-label={`Renomear título ${t.letra}`}
+                                    >
+                                        <Pencil size={12} />
+                                    </button>
+                                </div>
+                            ))}
+                            {nextTituloLetter && (
+                                <button
+                                    type="button"
+                                    className="mapa-semanal-titulo-add-btn"
+                                    onClick={() => onAddTitulo(nextTituloLetter)}
+                                >
+                                    <Plus size={14} /> Adicionar título {nextTituloLetter}
+                                </button>
+                            )}
+                        </div>
+                    </>
                 )}
             </div>
 
@@ -210,7 +290,7 @@ const MapaInsercoesSemanal = ({
                                     key={d}
                                     type="button"
                                     className={`mapa-semanal-cell${mark ? ' is-marked' : ''}${isWeekend ? ' is-weekend' : ''}`}
-                                    onClick={() => startEdit(rowIdx, d, mark)}
+                                    onClick={() => (mark ? startEdit(rowIdx, d, mark) : onSetDayMark(rowIdx, d, tituloAtivo))}
                                 >
                                     {mark}
                                 </button>
