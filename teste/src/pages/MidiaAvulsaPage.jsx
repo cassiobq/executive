@@ -118,6 +118,7 @@ export default function MidiaAvulsaPage({ onBack, active }) {
 
     const [isMobileTrayOpen, setIsMobileTrayOpen] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
+    const [piCopied, setPiCopied] = useState(false);
     const [isFlashing, setIsFlashing] = useState(false);
     const cardRef = useRef(null);
     const page1Ref = useRef(null);
@@ -431,7 +432,11 @@ export default function MidiaAvulsaPage({ onBack, active }) {
     };
 
     const handleExportPI = async () => {
-        if (!piRef.current || !canExportPI) return;
+        if (!canExportPI) {
+            alert('Ative só uma segundagem pra exportar a PI.');
+            return;
+        }
+        if (!piRef.current) return;
         setIsFlashing(true);
         setTimeout(() => setIsFlashing(false), 400);
         try {
@@ -464,8 +469,8 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                 pdf.save(fileName);
             }
 
-            setIsCopied(true);
-            setTimeout(() => setIsCopied(false), 2000);
+            setPiCopied(true);
+            setTimeout(() => setPiCopied(false), 2000);
         } catch (err) {
             if (err?.name === 'AbortError') return;
             alert('Erro ao gerar PI. Tente novamente.');
@@ -796,12 +801,11 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                                     </button>
                                     <button
                                         type="button"
-                                        className="export-preview-share-btn"
+                                        className={`export-preview-share-btn${canExportPI ? '' : ' is-blocked'}`}
                                         onClick={handleExportPI}
-                                        disabled={!canExportPI}
                                         title={canExportPI ? 'Exportar para PI' : 'Ative só uma segundagem pra exportar a PI'}
                                     >
-                                        <FileSpreadsheet size={18} />
+                                        {piCopied ? <Check size={18} /> : <FileSpreadsheet size={18} />}
                                         Exportar para PI
                                     </button>
                                 </div>
@@ -875,12 +879,11 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                         )}
                         {formato !== 'card' && (
                             <button
-                                className="mobile-copy-btn"
+                                className={`mobile-copy-btn${canExportPI ? '' : ' is-blocked'}`}
                                 onClick={handleExportPI}
-                                disabled={!canExportPI}
                                 title={canExportPI ? 'Exportar para PI' : 'Ative só uma segundagem pra exportar a PI'}
                             >
-                                <FileSpreadsheet size={22} />
+                                {piCopied ? <Check size={22} /> : <FileSpreadsheet size={22} />}
                             </button>
                         )}
                     </div>

@@ -376,7 +376,7 @@ body {
     transition: all 0.2s ease;
   }
 
-  .mobile-copy-btn:disabled {
+  .mobile-copy-btn.is-blocked {
     opacity: 0.45;
     cursor: not-allowed;
     box-shadow: none;
@@ -516,7 +516,7 @@ body {
     box-shadow: 0 8px 24px rgba(90, 28, 219, 0.4);
   }
 
-  .export-preview-share-btn:disabled {
+  .export-preview-share-btn.is-blocked {
     opacity: 0.45;
     cursor: not-allowed;
     box-shadow: none;
