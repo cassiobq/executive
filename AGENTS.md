@@ -77,6 +77,12 @@ git push origin main
 # URL: https://cassiobq.github.io/executive/
 ```
 
-## Funcionalidade Futura
+## Subprojeto `teste/` — app independente no mesmo repo
 
-- **Mídia Avulsa** usando `coeficiente_15` e `coeficiente_10` da sheet `programas` (colunas já existem, lógica ainda não implementada).
+A pasta `teste/` é um **segundo app**, publicado junto pelo mesmo deploy
+em `/executive/teste/` (ver `.github/workflows/deploy.yml`). Foi ali,
+não aqui, que o formato **Mídia Avulsa → Slide** (mapa de inserções,
+editor mobile por semana, sistema de títulos de campanha, popup de
+exportação com compartilhamento nativo) foi construído. Este app raiz
+ainda só tem o formato Card na Mídia Avulsa. Ver `teste/AGENTS.md` para
+o contexto completo desse subprojeto antes de mexer nele.

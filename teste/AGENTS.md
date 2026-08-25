@@ -1,0 +1,138 @@
+# AGENTS.md — Contexto para IAs (`teste/`)
+
+Este é um app **independente** dentro do mesmo repositório do `executive`
+(app raiz). Mesmo código-base original (fork do app raiz), mas evoluído
+separadamente — é aqui que a funcionalidade **Mídia Avulsa → Slide**
+(mapa de inserções com editor mobile) foi construída e é onde ela
+continua sendo desenvolvida.
+
+- **App raiz** (`/executive/`, pasta `src/` na raiz do repo): versão mais
+  simples, sem o formato Slide funcional (Mídia Avulsa lá só tem o
+  formato Card).
+- **Este app** (`/executive/teste/`, pasta `teste/`): tem o formato Slide
+  completo — mapa de inserções, editor semanal mobile, sistema de
+  títulos de campanha, popup de exportação com compartilhamento nativo.
+
+Os dois são publicados juntos pelo mesmo workflow
+(`.github/workflows/deploy.yml`, na raiz do repo): builda `src/` → `site/`
+e `teste/` → `site/teste/`, e sobe os dois no mesmo deploy do GitHub
+Pages. **Não existe deploy separado para `teste/`** — qualquer push em
+`main` reconstrói e publica ambos.
+
+## O que é o app (igual ao raiz, ver `../AGENTS.md` para a base)
+
+PWA React/Vite para gerar cards e mapas de inserção para propostas de
+patrocínio de TV (TV Anhanguera, praça Rio Verde). Ver `../AGENTS.md`
+para stack, fórmula de preço e estrutura de dados do Google Sheets — é
+tudo idêntico aqui, só a página **Mídia Avulsa** diverge de verdade.
+
+## Mídia Avulsa: Card vs Slide
+
+`src/pages/MidiaAvulsaPage.jsx` tem um toggle `formato: 'card' | 'slide'`
+(estado `formato`, linha ~94):
+
+- **Card**: comportamento herdado do app raiz — sidebar com table builder,
+  1–3 cards de preço.
+- **Slide**: exporta 2 páginas paisagem em PDF — página 1 é o card de
+  preço reflowed, página 2 é o **Mapa de Inserções** (grade mensal por
+  programa × dia, com marcações de inserção). As "inserções" de cada
+  linha, nesse formato, são **derivadas** da soma das marcas no mapa
+  (não digitadas manualmente).
+
+### Desktop vs mobile — dois componentes diferentes para o mesmo mapa
+
+O breakpoint mobile é definido em `src/index.css`, usado consistentemente
+em todo o app (não há detecção de viewport em JS, exceto um
+`window.matchMedia` pontual — ver abaixo):
+
+```css
+@media (max-width: 768px), (max-height: 500px) and (orientation: landscape)
+```
+
+- **`src/components/MapaInsercoes.jsx`** — grade mensal completa, usada
+  para: (a) renderização desktop normal, e (b) o conteúdo que vira a
+  imagem/PDF exportado em qualquer tamanho de tela (via `page1Ref`).
+- **`src/components/MapaInsercoesSemanal.jsx`** — editor **mobile**, uma
+  semana por vez (troca por swipe/botões), tocar numa célula
+  preenche/edita. É o que aparece na tela em telas pequenas/paisagem;
+  nunca é o que vira a exportação.
+
+### Sistema de "títulos" de campanha
+
+Uma PI pode ter mais de um título/VT (ex.: campanha "A" e campanha "B"
+rodando junto). `src/utils/titulos.js`:
+
+- `LETRAS_TITULO = ['A','B','C','D','E','F']` — letras fixas, nessa ordem
+  (padrão das PI's da emissora).
+- `getNextTituloLetter(titulos)` — próxima letra livre.
+- `computeTitulosUsados(titulos, mapRows)` — filtra só os títulos que
+  têm pelo menos uma marca no mapa (títulos criados mas não usados não
+  aparecem na legenda do PDF).
+
+Estado em `MidiaAvulsaPage.jsx`: `titulos` (lista `{letra, nome}`,
+começa com `[{letra:'A', nome:'Campanha'}]`) e `tituloAtivo` (letra
+selecionada no momento). No editor mobile
+(`MapaInsercoesSemanal.jsx`), tocar numa célula **vazia** preenche
+direto com a letra do título ativo (sem teclado); tocar numa célula **já
+preenchida** abre edição manual. Formato de marca:
+`\d*[A-Z]` (ex. `"2A"`, `"C"`) — dígito = quantidade (letra sozinha
+implica quantidade 1, ver `markQuantity()` em `src/utils/weekLock.js`),
+letra maiúscula final = o título.
+
+### Popup de exportação (mobile)
+
+Antigo "modo resumo" em tela cheia foi substituído por um popup
+(`.slide-scale-wrapper.export-preview-open` em `index.css`) — mostra só
+o mapa, com zoom por pinça, botão de fechar e botão de exportar PDF que
+aciona `navigator.share()` (compartilhamento nativo do celular), com
+fallback para `pdf.save()` quando share não existe ou falha (exceto
+`AbortError`, que é cancelamento do usuário e não mostra erro).
+
+O botão flutuante de exportar (`.mobile-copy-btn`, fora do popup) usa
+`window.matchMedia(...)` com a mesma string do breakpoint acima, em
+`handleExportPdf`'s caller, para decidir: mobile → abre o popup;
+desktop → baixa o PDF direto (é o único lugar do app com detecção de
+viewport em JS — todo o resto do split desktop/mobile é CSS puro).
+
+## Utils com testes (`node --test`)
+
+- `src/utils/weekWindows.js` — calcula as "semanas" do mês para o
+  editor mobile (semanas parciais no início/fim do mês).
+- `src/utils/weekLock.js` — `getAllowedWeekdays`, `markQuantity`,
+  `normalizeMark` (parsing/validação do formato de marca).
+- `src/utils/titulos.js` — ver acima.
+
+Rodar: `npm test` (usa `node --test src/**/*.test.js` — **não** use
+`node --test src` sozinho, falha com MODULE_NOT_FOUND nesse projeto).
+
+## Convenções de desenvolvimento deste app
+
+Este subprojeto foi desenvolvido usando os skills do plugin
+`superpowers` (brainstorming → spec → plano → subagent-driven-development
+→ finishing-a-development-branch). Specs e planos ficam em
+`../docs/superpowers/` (raiz do repo, não dentro de `teste/`):
+
+- `docs/superpowers/specs/2026-08-12-mapa-insercoes-mobile-design.md` +
+  `docs/superpowers/plans/2026-08-12-mapa-insercoes-mobile.md` — editor
+  semanal mobile (base do `MapaInsercoesSemanal.jsx`).
+- `docs/superpowers/specs/2026-08-13-titulos-toque-rapido-popup-export.md` +
+  `docs/superpowers/plans/2026-08-13-titulos-toque-rapido-popup-export.md`
+  — sistema de títulos, toque rápido, popup de exportação.
+
+Ambos os planos foram totalmente implementados, revisados (por tarefa +
+revisão final de todo o branch) e mergeados na `main` (PRs #1 e #2).
+
+## Rodar Localmente
+
+```bash
+cd teste
+npm install
+npm run dev
+# → http://localhost:5173/executive/teste/ (a porta real pode variar se 5173 estiver ocupada)
+```
+
+## Verificação em navegador mobile real
+
+O deploy publica em `https://cassiobq.github.io/executive/teste/` — é
+essa URL que reflete o estado atual do app para teste em celular real
+(não a raiz `/executive/`, que é o app mais simples).
