@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Repeat, ArrowRight, Pencil } from 'lucide-react';
 import { normalizeMark, markQuantity } from '../utils/weekLock';
-import { computeWeekWindows } from '../utils/weekWindows';
+import { computeWeekWindows, computeActiveWeekIndex } from '../utils/weekWindows';
 import { getNextTituloLetter } from '../utils/titulos';
 
 // Seg..Dom, alinhado a uma semana que começa na segunda (diferente de
@@ -34,12 +34,56 @@ const MapaInsercoesSemanal = ({
 }) => {
     const weeks = computeWeekWindows({ year, monthIndex, daysInMonth });
     const [weekIdx, setWeekIdx] = useState(0);
+    const weeksScrollRef = useRef(null);
+    const scrollSettleRef = useRef(null);
+
+    // As semanas viram um carrossel horizontal com scroll-snap: o dedo
+    // arrasta entre elas (sem gesto customizado, só CSS) e `weekIdx` — usado
+    // pro indicador, rodapé e "repetir semana anterior" — é derivado da
+    // posição de scroll assim que o arrasto termina, em vez de ser a única
+    // fonte de verdade. Setas continuam funcionando: chamam goToWeek, que
+    // só rola o container; a mesma leitura de scroll-parado atualiza o
+    // estado, então os dois caminhos convergem pro mesmo lugar.
+    const goToWeek = (idx) => {
+        const el = weeksScrollRef.current;
+        const clamped = Math.min(weeks.length - 1, Math.max(0, idx));
+        if (el) el.scrollTo({ left: clamped * el.clientWidth, behavior: 'smooth' });
+        else setWeekIdx(clamped);
+    };
+
+    const handleWeeksScroll = () => {
+        const el = weeksScrollRef.current;
+        if (!el) return;
+        if (scrollSettleRef.current) clearTimeout(scrollSettleRef.current);
+        scrollSettleRef.current = setTimeout(() => {
+            setWeekIdx(computeActiveWeekIndex(el.scrollLeft, el.clientWidth, weeks.length));
+        }, 120);
+    };
+
+    useEffect(() => () => {
+        if (scrollSettleRef.current) clearTimeout(scrollSettleRef.current);
+    }, []);
+
+    // Reencaixa a semana ativa quando o viewport muda de tamanho (ex.: giro
+    // de tela) — sem isso, `scrollLeft` em pixels fica desalinhado com o
+    // novo `clientWidth` e o painel visível fica "cortado" entre duas semanas.
+    useEffect(() => {
+        const handleResize = () => {
+            const el = weeksScrollRef.current;
+            if (el) el.scrollTo({ left: weekIdx * el.clientWidth, behavior: 'auto' });
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [weekIdx]);
 
     // Se o mês mudar pra um com menos semanas enquanto uma semana tardia
     // estiver selecionada, volta pra semana 1 em vez de apontar pro nada.
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        if (weekIdx >= weeks.length) setWeekIdx(0);
+        if (weekIdx >= weeks.length) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setWeekIdx(0);
+            weeksScrollRef.current?.scrollTo({ left: 0, behavior: 'auto' });
+        }
     }, [weeks.length, weekIdx]);
 
     const [busca, setBusca] = useState('');
@@ -108,7 +152,6 @@ const MapaInsercoesSemanal = ({
 
     const weekQuantity = (row) => week.days.reduce((sum, d) => sum + markQuantity(row.marks[d]), 0);
     const weekTotalInsercoes = rows.reduce((sum, row) => sum + weekQuantity(row), 0);
-    const rowGridTemplate = `92px repeat(${week.days.length}, 1fr) 30px`;
 
     return (
         <div className="mapa-semanal">
@@ -117,7 +160,7 @@ const MapaInsercoesSemanal = ({
                 <div className="mapa-semanal-week-nav">
                     <button
                         type="button"
-                        onClick={() => setWeekIdx(i => Math.max(0, i - 1))}
+                        onClick={() => goToWeek(weekIdx - 1)}
                         disabled={weekIdx === 0}
                         aria-label="Semana anterior"
                     >
@@ -126,7 +169,7 @@ const MapaInsercoesSemanal = ({
                     <span>Semana {weekIdx + 1} de {weeks.length}</span>
                     <button
                         type="button"
-                        onClick={() => setWeekIdx(i => Math.min(weeks.length - 1, i + 1))}
+                        onClick={() => goToWeek(weekIdx + 1)}
                         disabled={weekIdx === weeks.length - 1}
                         aria-label="Próxima semana"
                     >
@@ -206,99 +249,110 @@ const MapaInsercoesSemanal = ({
                 )}
             </div>
 
-            <div className="mapa-semanal-dow-row" style={{ gridTemplateColumns: rowGridTemplate }}>
-                <div />
-                {week.days.map(d => {
-                    const dow = new Date(year, monthIndex, d).getDay();
-                    const isWeekend = dow === 0 || dow === 6;
-                    const letter = WEEKDAY_LETTERS_MONFIRST[dow === 0 ? 6 : dow - 1];
+            <div className="mapa-semanal-weeks-scroll" ref={weeksScrollRef} onScroll={handleWeeksScroll}>
+                {weeks.map((w, wIdx) => {
+                    const panelGridTemplate = `92px repeat(${w.days.length}, 1fr) 30px`;
                     return (
-                        <div key={d} className={isWeekend ? 'is-weekend' : ''}>
-                            <span>{letter}</span>
-                            <span>{d}</span>
+                        <div key={wIdx} className="mapa-semanal-week-panel">
+                            <div className="mapa-semanal-dow-row" style={{ gridTemplateColumns: panelGridTemplate }}>
+                                <div />
+                                {w.days.map(d => {
+                                    const dow = new Date(year, monthIndex, d).getDay();
+                                    const isWeekend = dow === 0 || dow === 6;
+                                    const letter = WEEKDAY_LETTERS_MONFIRST[dow === 0 ? 6 : dow - 1];
+                                    return (
+                                        <div key={d} className={isWeekend ? 'is-weekend' : ''}>
+                                            <span>{letter}</span>
+                                            <span>{d}</span>
+                                        </div>
+                                    );
+                                })}
+                                <div>QTD</div>
+                            </div>
+
+                            <div className="mapa-semanal-rows">
+                                {rows.map((row, rowIdx) => (
+                                    <div key={rowIdx} className="mapa-semanal-row" style={{ gridTemplateColumns: panelGridTemplate }}>
+                                        <div className="mapa-semanal-sigla">
+                                            <div className="reorder-btns">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onReorderRows(rowIdx, rowIdx - 1)}
+                                                    disabled={rowIdx === 0}
+                                                    aria-label="Mover programa pra cima"
+                                                >
+                                                    <ChevronUp size={12} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onReorderRows(rowIdx, rowIdx + 1)}
+                                                    disabled={rowIdx === rows.length - 1}
+                                                    aria-label="Mover programa pra baixo"
+                                                >
+                                                    <ChevronDown size={12} />
+                                                </button>
+                                            </div>
+                                            <div className="sigla-text" title={row.programa}>
+                                                <b>{row.sigla}</b>
+                                                <small>{row.horario}</small>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="delete-btn"
+                                                onClick={() => onDeleteRow(rowIdx)}
+                                                aria-label="Remover programa"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                        {w.days.map(d => {
+                                            const dow = new Date(year, monthIndex, d).getDay();
+                                            const isWeekend = dow === 0 || dow === 6;
+                                            const locked = row.allowedWeekdays && !row.allowedWeekdays.has(dow);
+                                            const mark = row.marks[d] || '';
+                                            const isEditing = editingCell && editingCell.rowIdx === rowIdx && editingCell.day === d;
+
+                                            if (locked) {
+                                                return <div key={d} className="mapa-semanal-cell is-locked" />;
+                                            }
+
+                                            if (isEditing) {
+                                                return (
+                                                    <input
+                                                        key={d}
+                                                        autoFocus
+                                                        className="mapa-semanal-cell-input"
+                                                        value={editValue}
+                                                        onChange={e => setEditValue(normalizeMark(e.target.value))}
+                                                        onBlur={commitEdit}
+                                                        onKeyDown={e => {
+                                                            if (e.key === 'Enter') e.currentTarget.blur();
+                                                            else if (e.key === 'Escape') cancelEdit();
+                                                        }}
+                                                    />
+                                                );
+                                            }
+
+                                            return (
+                                                <button
+                                                    key={d}
+                                                    type="button"
+                                                    className={`mapa-semanal-cell${mark ? ' is-marked' : ''}${isWeekend ? ' is-weekend' : ''}`}
+                                                    onClick={() => (mark ? startEdit(rowIdx, d, mark) : onSetDayMark(rowIdx, d, tituloAtivo))}
+                                                >
+                                                    {mark}
+                                                </button>
+                                            );
+                                        })}
+                                        <div className="mapa-semanal-qtd">
+                                            {w.days.reduce((sum, d) => sum + markQuantity(row.marks[d]), 0)}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     );
                 })}
-                <div>QTD</div>
-            </div>
-
-            <div className="mapa-semanal-rows">
-                {rows.map((row, rowIdx) => (
-                    <div key={rowIdx} className="mapa-semanal-row" style={{ gridTemplateColumns: rowGridTemplate }}>
-                        <div className="mapa-semanal-sigla">
-                            <div className="reorder-btns">
-                                <button
-                                    type="button"
-                                    onClick={() => onReorderRows(rowIdx, rowIdx - 1)}
-                                    disabled={rowIdx === 0}
-                                    aria-label="Mover programa pra cima"
-                                >
-                                    <ChevronUp size={12} />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => onReorderRows(rowIdx, rowIdx + 1)}
-                                    disabled={rowIdx === rows.length - 1}
-                                    aria-label="Mover programa pra baixo"
-                                >
-                                    <ChevronDown size={12} />
-                                </button>
-                            </div>
-                            <div className="sigla-text" title={row.programa}>
-                                <b>{row.sigla}</b>
-                                <small>{row.horario}</small>
-                            </div>
-                            <button
-                                type="button"
-                                className="delete-btn"
-                                onClick={() => onDeleteRow(rowIdx)}
-                                aria-label="Remover programa"
-                            >
-                                <Trash2 size={14} />
-                            </button>
-                        </div>
-                        {week.days.map(d => {
-                            const dow = new Date(year, monthIndex, d).getDay();
-                            const isWeekend = dow === 0 || dow === 6;
-                            const locked = row.allowedWeekdays && !row.allowedWeekdays.has(dow);
-                            const mark = row.marks[d] || '';
-                            const isEditing = editingCell && editingCell.rowIdx === rowIdx && editingCell.day === d;
-
-                            if (locked) {
-                                return <div key={d} className="mapa-semanal-cell is-locked" />;
-                            }
-
-                            if (isEditing) {
-                                return (
-                                    <input
-                                        key={d}
-                                        autoFocus
-                                        className="mapa-semanal-cell-input"
-                                        value={editValue}
-                                        onChange={e => setEditValue(normalizeMark(e.target.value))}
-                                        onBlur={commitEdit}
-                                        onKeyDown={e => {
-                                            if (e.key === 'Enter') e.currentTarget.blur();
-                                            else if (e.key === 'Escape') cancelEdit();
-                                        }}
-                                    />
-                                );
-                            }
-
-                            return (
-                                <button
-                                    key={d}
-                                    type="button"
-                                    className={`mapa-semanal-cell${mark ? ' is-marked' : ''}${isWeekend ? ' is-weekend' : ''}`}
-                                    onClick={() => (mark ? startEdit(rowIdx, d, mark) : onSetDayMark(rowIdx, d, tituloAtivo))}
-                                >
-                                    {mark}
-                                </button>
-                            );
-                        })}
-                        <div className="mapa-semanal-qtd">{weekQuantity(row)}</div>
-                    </div>
-                ))}
             </div>
 
             <div className="mapa-semanal-add-row">

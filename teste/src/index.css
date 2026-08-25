@@ -699,6 +699,29 @@ body {
   cursor: pointer;
 }
 
+/* Carrossel horizontal com scroll-snap: um painel por semana (dow-row +
+   linhas de programas). O dedo arrasta entre semanas com o gesto de scroll
+   nativo do navegador — sem JS de gesto customizado. Cada painel ocupa
+   100% da largura do container e "trava" (scroll-snap-align) ao soltar. */
+.mapa-semanal-weeks-scroll {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.mapa-semanal-weeks-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.mapa-semanal-week-panel {
+  flex: 0 0 100%;
+  min-width: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
 .mapa-semanal-dow-row {
   display: grid;
   align-items: center;

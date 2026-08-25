@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { computeWeekWindows } from './weekWindows.js';
+import { computeWeekWindows, computeActiveWeekIndex } from './weekWindows.js';
 
 // Agosto/2026: dia 1 = sábado, dia 31 = segunda (31 dias). Semana fragmentada
 // no início (sáb+dom) e no fim (só a segunda 31).
@@ -41,4 +41,27 @@ test('toda semana (exceto possivelmente a 1ª) começa numa segunda-feira real',
         const dow = new Date(2026, 7, firstDay).getDay();
         assert.equal(dow, 1, `semana ${i} deveria começar numa segunda`);
     }
+});
+
+test('computeActiveWeekIndex — scroll parado exatamente no início de um painel', () => {
+    assert.equal(computeActiveWeekIndex(0, 400, 5), 0);
+    assert.equal(computeActiveWeekIndex(400, 400, 5), 1);
+    assert.equal(computeActiveWeekIndex(1600, 400, 5), 4);
+});
+
+test('computeActiveWeekIndex — arredonda pro painel mais próximo em posições intermediárias', () => {
+    assert.equal(computeActiveWeekIndex(150, 400, 5), 0); // 0.375 → arredonda pra 0
+    assert.equal(computeActiveWeekIndex(250, 400, 5), 1); // 0.625 → arredonda pra 1
+    assert.equal(computeActiveWeekIndex(199, 400, 5), 0);
+    assert.equal(computeActiveWeekIndex(201, 400, 5), 1);
+});
+
+test('computeActiveWeekIndex — trava no primeiro/último painel mesmo com overscroll (rubber-band iOS)', () => {
+    assert.equal(computeActiveWeekIndex(-60, 400, 5), 0); // overscroll negativo no início
+    assert.equal(computeActiveWeekIndex(1900, 400, 5), 4); // overscroll além do último painel
+});
+
+test('computeActiveWeekIndex — guarda contra divisão por zero / valores degenerados', () => {
+    assert.equal(computeActiveWeekIndex(0, 0, 5), 0); // clientWidth ainda não medido (ex.: 1º render)
+    assert.equal(computeActiveWeekIndex(200, 400, 0), 0); // sem semanas
 });

@@ -20,3 +20,13 @@ export function computeWeekWindows({ year, monthIndex, daysInMonth }) {
     }
     return weeks;
 }
+
+// Deriva o índice da semana "ativa" a partir da posição de scroll de um
+// carrossel horizontal com scroll-snap (um painel por semana, cada um com a
+// largura do container). Usado pelo editor mobile depois que o usuário
+// arrasta com o dedo em vez de clicar nas setas.
+export function computeActiveWeekIndex(scrollLeft, panelWidth, weekCount) {
+    if (weekCount <= 0 || !panelWidth) return 0;
+    const idx = Math.round(scrollLeft / panelWidth);
+    return Math.min(weekCount - 1, Math.max(0, idx));
+}
