@@ -376,6 +376,12 @@ body {
     transition: all 0.2s ease;
   }
 
+  .mobile-copy-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
   .mobile-home-btn {
     display: flex;
     background: rgba(10, 199, 91, 0.75);
@@ -484,12 +490,17 @@ body {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   }
 
-  .export-preview-share-btn {
+  .export-preview-actions {
     position: fixed;
     bottom: 1.25rem;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1001;
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  .export-preview-share-btn {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -503,6 +514,12 @@ body {
     font-size: 0.9rem;
     cursor: pointer;
     box-shadow: 0 8px 24px rgba(90, 28, 219, 0.4);
+  }
+
+  .export-preview-share-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
   }
 }
 

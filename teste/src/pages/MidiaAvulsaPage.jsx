@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Settings2, Check, Camera, Plus, Trash2, Home, FileDown, X } from 'lucide-react';
+import { ArrowLeft, Settings2, Check, Camera, Plus, Trash2, Home, FileDown, FileSpreadsheet, X } from 'lucide-react';
 import { fetchAllSheetData } from '../services/sheetsService';
 import MidiaAvulsaCard from '../components/MidiaAvulsaCard';
 import MapaInsercoes from '../components/MapaInsercoes';
 import MapaInsercoesSemanal from '../components/MapaInsercoesSemanal';
+import PISlide from '../components/PISlide';
 import ResumoSlidePage from '../components/ResumoSlidePage';
 import { getAllowedWeekdays, markQuantity } from '../utils/weekLock';
 import { computeTitulosUsados } from '../utils/titulos';
@@ -37,6 +38,8 @@ const MONTH_NAMES = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
+
+const MONTH_ABBR = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
 const getNextMonths = () => {
     const currentMonthIdx = new Date().getMonth();
@@ -119,6 +122,7 @@ export default function MidiaAvulsaPage({ onBack, active }) {
     const cardRef = useRef(null);
     const page1Ref = useRef(null);
     const page2Ref = useRef(null);
+    const piRef = useRef(null);
 
     useEffect(() => {
         fetchAllSheetData().then(res => {
@@ -236,6 +240,26 @@ export default function MidiaAvulsaPage({ onBack, active }) {
 
     const numVisibleCards = secondsCards.length;
     const useSinglePage = mapRows.length <= MAX_ROWS_SINGLE_PAGE;
+
+    // PI só faz sentido com uma duração/valor/desconto únicos pro documento
+    // inteiro — se houver mais de uma segundagem ativa ao mesmo tempo, o
+    // botão fica desabilitado em vez de tentar adivinhar qual usar (ver spec).
+    const activeSegundos = secondsCards.length === 1 ? secondsCards[0].segundos : null;
+    const canExportPI = activeSegundos !== null;
+    const piDuracaoLabel = activeSegundos ? `${activeSegundos}"` : '';
+    const piDescontoPercent = activeSegundos ? (activeSeconds[activeSegundos]?.discount || 0) : 0;
+    const piValorTabela = activeSegundos ? totalMap[activeSegundos] : 0;
+    const piTotalMidia = piValorTabela * (1 - piDescontoPercent / 100);
+    const piMonthLabelShort = `${MONTH_ABBR[mapMonthIndex]}/${String(mapYear).slice(-2)}`;
+    const piRows = enrichedRows.map(r => ({
+        sigla: r.sigla,
+        programa: r.programa,
+        dias: r.dias,
+        marks: r.marks,
+        insercoes: r.insercoes,
+        unit: activeSegundos ? r[`unitValor${activeSegundos}`] : 0,
+        total: activeSegundos ? r[`valor${activeSegundos}`] : 0,
+    }));
 
     // --- Handlers ---
     const handleSelectSigla = (p) => {
@@ -403,6 +427,48 @@ export default function MidiaAvulsaPage({ onBack, active }) {
         } catch (err) {
             if (err?.name === 'AbortError') return; // usuário cancelou o menu de compartilhar
             alert('Erro ao gerar PDF. Tente novamente.');
+        }
+    };
+
+    const handleExportPI = async () => {
+        if (!piRef.current || !canExportPI) return;
+        setIsFlashing(true);
+        setTimeout(() => setIsFlashing(false), 400);
+        try {
+            const htmlToImage = await import('html-to-image');
+            const { jsPDF } = await import('jspdf');
+            const exportOpts = {
+                quality: 0.92,
+                pixelRatio: 2,
+                backgroundColor: '#ffffff',
+                filter: (node) => !node.classList?.contains('no-export'),
+            };
+            const widthMm = 297;
+            const heightMm = 210;
+            const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [widthMm, heightMm], compress: true });
+
+            const img = await htmlToImage.toJpeg(piRef.current, exportOpts);
+            pdf.addImage(img, 'JPEG', 0, 0, widthMm, heightMm);
+
+            const pdfBlob = pdf.output('blob');
+            const fileName = `PI-${selectedPraca}-${MONTH_ABBR[mapMonthIndex]}${mapYear}.pdf`;
+            const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+            if (navigator.canShare?.({ files: [pdfFile] })) {
+                try {
+                    await navigator.share({ files: [pdfFile], title: 'PI - Pedido de Inserção' });
+                } catch (shareErr) {
+                    if (shareErr?.name === 'AbortError') return; // usuário cancelou o menu de compartilhar
+                    pdf.save(fileName);
+                }
+            } else {
+                pdf.save(fileName);
+            }
+
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+        } catch (err) {
+            if (err?.name === 'AbortError') return;
+            alert('Erro ao gerar PI. Tente novamente.');
         }
     };
 
@@ -719,15 +785,46 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                                 </div>
                             )}
                             {exportPreviewOpen && (
-                                <button
-                                    type="button"
-                                    className="export-preview-share-btn"
-                                    onClick={handleExportPdf}
-                                >
-                                    {isCopied ? <Check size={18} /> : <FileDown size={18} />}
-                                    Exportar PDF
-                                </button>
+                                <div className="export-preview-actions">
+                                    <button
+                                        type="button"
+                                        className="export-preview-share-btn"
+                                        onClick={handleExportPdf}
+                                    >
+                                        {isCopied ? <Check size={18} /> : <FileDown size={18} />}
+                                        Exportar PDF
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="export-preview-share-btn"
+                                        onClick={handleExportPI}
+                                        disabled={!canExportPI}
+                                        title={canExportPI ? 'Exportar para PI' : 'Ative só uma segundagem pra exportar a PI'}
+                                    >
+                                        <FileSpreadsheet size={18} />
+                                        Exportar para PI
+                                    </button>
+                                </div>
                             )}
+                        </div>
+                        <div style={{ position: 'fixed', top: 0, left: '-10000px', pointerEvents: 'none' }}>
+                            <div ref={piRef}>
+                                <PISlide
+                                    pracaKey={selectedPraca}
+                                    pracaLabel={pracaLabel}
+                                    monthLabelLong={monthLabel}
+                                    monthLabelShort={piMonthLabelShort}
+                                    year={mapYear}
+                                    monthIndex={mapMonthIndex}
+                                    daysInMonth={mapDaysInMonth}
+                                    rows={piRows}
+                                    titulosUsados={titulosUsados}
+                                    duracaoLabel={piDuracaoLabel}
+                                    descontoPercent={piDescontoPercent}
+                                    valorTabela={piValorTabela}
+                                    totalMidia={piTotalMidia}
+                                />
+                            </div>
                         </div>
                     </>
                 )}
@@ -774,6 +871,16 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                                 title="Ver resumo e exportar"
                             >
                                 <FileDown size={22} />
+                            </button>
+                        )}
+                        {formato !== 'card' && (
+                            <button
+                                className="mobile-copy-btn"
+                                onClick={handleExportPI}
+                                disabled={!canExportPI}
+                                title={canExportPI ? 'Exportar para PI' : 'Ative só uma segundagem pra exportar a PI'}
+                            >
+                                <FileSpreadsheet size={22} />
                             </button>
                         )}
                     </div>
