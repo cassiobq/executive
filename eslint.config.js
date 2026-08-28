@@ -5,7 +5,11 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // teste/ é um app irmão independente, com seu próprio eslint.config.js e
+  // seu próprio `npm run lint` — sem isso, `eslint .` na raiz varre o
+  // teste/src inteiro de novo (redundante) e qualquer teste/dist/ que exista
+  // no disco (artefato de build, não código-fonte).
+  globalIgnores(['dist', 'teste']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [

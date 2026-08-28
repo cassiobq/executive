@@ -106,6 +106,44 @@ body {
   cursor: pointer;
 }
 
+/* Segmented control (ex: Card / Slide) */
+.segmented-control {
+  display: flex;
+  background: #f0f0f0;
+  border-radius: 10px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.segmented-control button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 0.5rem 0;
+  border-radius: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.segmented-control button.active {
+  background: white;
+  color: var(--primary);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Slide format: 2 landscape pages stacked, centered */
+.slide-scale-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2rem 0;
+}
+
 .card-settings {
   background: #f8f9fc;
   border-radius: 12px;
@@ -180,8 +218,10 @@ body {
 
 /* ==============================
    MOBILE LAYOUT
+   Also matches phones in landscape: they're often wider than 768px but short
+   (height <= 500px), which tablets/desktops in landscape are not.
    ============================== */
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-height: 500px) and (orientation: landscape) {
 
   /* Lock the root so nothing triggers a page-level scroll */
   html,
@@ -336,6 +376,12 @@ body {
     transition: all 0.2s ease;
   }
 
+  .mobile-copy-btn.is-blocked {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
   .mobile-home-btn {
     display: flex;
     background: rgba(10, 199, 91, 0.75);
@@ -375,6 +421,564 @@ body {
     backdrop-filter: blur(2px);
     animation: fadeIn 0.3s forwards;
   }
+}
+
+/* ==============================
+   MAPA DE INSERÇÕES — EDITOR SEMANAL MOBILE
+   MapaInsercoesSemanal é a superfície de edição em telas pequenas: sempre
+   fica escondida por padrão (regra fora de qualquer media query, então
+   desktop nunca mostra ela) e só aparece dentro do breakpoint mobile quando
+   o estado da página marca ".mobile-editing-active". A grade desktop
+   (.slide-scale-wrapper, alvo da exportação de PDF/imagem) faz o caminho
+   inverso: continua com seu display normal em todo lugar, e só é escondida
+   dentro do breakpoint mobile enquanto o editor semanal está ativo — nunca
+   com display:none permanente, porque ela precisa continuar montada e em
+   layout normal pra exportação funcionar quando o usuário volta pra ela.
+   ============================== */
+.mobile-slide-editor {
+  display: none;
+}
+
+@media (max-width: 768px), (max-height: 500px) and (orientation: landscape) {
+  .mobile-slide-editor {
+    display: block;
+    align-self: stretch;      /* stop shrink-to-fit sizing */
+    flex: 1 1 auto;
+    min-height: 0;            /* allow the flex item to shrink below content, enabling its own scroll */
+    overflow-y: auto;
+  }
+
+  /* .slide-scale-wrapper (grade desktop, alvo da exportação) só aparece no
+     mobile dentro do popup — nunca "por baixo" do editor semanal. */
+  .slide-scale-wrapper {
+    display: none;
+  }
+
+  .slide-scale-wrapper.export-preview-open {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(20, 12, 36, 0.72);
+    padding: 3.5rem 1rem 2rem;
+    margin: 0;
+    overflow: auto;
+    align-items: flex-start;
+    /* flex-start (not the base rule's "center"): when content is taller than
+       the viewport, centering pushes it past the flex container's start
+       edge, and that overflow isn't part of the scrollable region — scrollTop
+       gets stuck at 0 and the top of the content becomes unreachable. */
+    justify-content: flex-start;
+    touch-action: manipulation;
+  }
+
+  .export-preview-close-btn {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1001;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  }
+
+  .export-preview-actions {
+    position: fixed;
+    bottom: 1.25rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1001;
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  .export-preview-share-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.4rem;
+    border-radius: 50px;
+    border: none;
+    background: var(--primary);
+    color: white;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(90, 28, 219, 0.4);
+  }
+
+  .export-preview-share-btn.is-blocked {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}
+
+.mapa-semanal {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0.75rem 0.75rem 6rem;
+  font-family: 'Outfit', sans-serif;
+  color: var(--text-dark);
+}
+
+.mapa-semanal-header {
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+.mapa-semanal-praca {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.mapa-semanal-titulo-row {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  margin-top: 0.5rem;
+}
+
+.mapa-semanal-titulo-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 50px;
+  border: 1.5px solid var(--primary);
+  background: rgba(90, 28, 219, 0.06);
+  color: var(--primary);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+.mapa-semanal-titulo-letra {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  font-size: 0.62rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.mapa-semanal-titulo-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 205;
+}
+
+.mapa-semanal-titulo-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  min-width: 220px;
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 210;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+
+.mapa-semanal-titulo-option {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.mapa-semanal-titulo-option-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  background: none;
+  padding: 0.2rem;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  cursor: pointer;
+  text-align: left;
+}
+
+.mapa-semanal-titulo-option-btn.is-active {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.mapa-semanal-titulo-edit-btn {
+  border: none;
+  background: none;
+  color: #94a3b8;
+  padding: 0.25rem;
+  display: flex;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.mapa-semanal-titulo-rename-input {
+  flex: 1;
+  padding: 0.3rem 0.5rem;
+  border: 1.5px solid var(--primary);
+  border-radius: 6px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  outline: none;
+}
+
+.mapa-semanal-titulo-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.55rem 0.6rem;
+  border: none;
+  background: none;
+  color: var(--primary);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.mapa-semanal-week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.3rem;
+}
+
+.mapa-semanal-week-nav span {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  min-width: 11rem;
+}
+
+.mapa-semanal-week-nav button {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid #e2e8f0;
+  background: white;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.mapa-semanal-week-nav button:disabled {
+  color: #cbd5e1;
+  border-color: #f1f5f9;
+  cursor: not-allowed;
+}
+
+.mapa-semanal-replicate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0.5rem auto 0;
+  padding: 0.45rem 0.9rem;
+  border-radius: 50px;
+  border: 1.5px solid var(--primary);
+  background: var(--bg-card);
+  color: var(--primary);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+/* Carrossel horizontal com scroll-snap: um painel por semana (dow-row +
+   linhas de programas). O dedo arrasta entre semanas com o gesto de scroll
+   nativo do navegador — sem JS de gesto customizado. Cada painel ocupa
+   100% da largura do container e "trava" (scroll-snap-align) ao soltar. */
+.mapa-semanal-weeks-scroll {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.mapa-semanal-weeks-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.mapa-semanal-week-panel {
+  flex: 0 0 100%;
+  min-width: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.mapa-semanal-dow-row {
+  display: grid;
+  align-items: center;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-align: center;
+  border-bottom: 2px solid var(--primary);
+  padding-bottom: 0.3rem;
+  margin-bottom: 0.15rem;
+}
+
+.mapa-semanal-dow-row > div {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+  border-radius: 4px;
+  padding: 0.1rem 0;
+}
+
+.mapa-semanal-dow-row > div.is-weekend {
+  color: #c2570f;
+  background: rgba(249, 115, 22, 0.16);
+}
+
+.mapa-semanal-row {
+  display: grid;
+  align-items: center;
+  min-height: 44px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.mapa-semanal-row:nth-child(odd) {
+  background: rgba(90, 28, 219, 0.04);
+}
+
+.mapa-semanal-sigla {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.mapa-semanal-sigla .reorder-btns {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.mapa-semanal-sigla .reorder-btns button {
+  border: none;
+  background: none;
+  color: #94a3b8;
+  padding: 0;
+  display: flex;
+  cursor: pointer;
+}
+
+.mapa-semanal-sigla .reorder-btns button:disabled {
+  color: #e2e8f0;
+  cursor: not-allowed;
+}
+
+.mapa-semanal-sigla .sigla-text {
+  min-width: 0;
+  overflow: hidden;
+  flex: 1;
+}
+
+.mapa-semanal-sigla .sigla-text b {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mapa-semanal-sigla .sigla-text small {
+  display: block;
+  font-size: 0.56rem;
+  font-weight: 500;
+  color: #888;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mapa-semanal-sigla .delete-btn {
+  border: none;
+  background: none;
+  color: #e74c3c;
+  padding: 0.2rem;
+  flex-shrink: 0;
+  display: flex;
+  cursor: pointer;
+}
+
+.mapa-semanal-cell,
+.mapa-semanal-cell-input {
+  height: 36px;
+  margin: 2px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  font-family: 'Outfit', sans-serif;
+}
+
+.mapa-semanal-cell {
+  border: none;
+  cursor: pointer;
+  color: transparent;
+  background: #e2e2e9;
+  padding: 0;
+}
+
+.mapa-semanal-cell.is-weekend {
+  background: rgba(249, 115, 22, 0.18);
+}
+
+.mapa-semanal-cell.is-marked {
+  color: white;
+  background: var(--primary);
+}
+
+.mapa-semanal-cell.is-locked {
+  background: transparent;
+  cursor: not-allowed;
+}
+
+.mapa-semanal-cell-input {
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  border: 1.5px solid var(--primary);
+  padding: 0;
+  outline: none;
+}
+
+.mapa-semanal-qtd {
+  text-align: center;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.mapa-semanal-add-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.mapa-semanal-add-row input {
+  flex: 1;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.85rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-family: 'Outfit', sans-serif;
+  outline: none;
+}
+
+.mapa-semanal-add-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #e2e8f0;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mapa-semanal-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 42px;
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 200;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.mapa-semanal-suggestions > div {
+  padding: 0.55rem 0.8rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.mapa-semanal-suggestions b {
+  color: var(--primary);
+  min-width: 2.5rem;
+}
+
+.mapa-semanal-suggestions span {
+  color: #555;
+  font-size: 0.82rem;
+}
+
+.mapa-semanal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1.5px dashed #e2e8f0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #555;
+}
+
+.mapa-semanal-resumo-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 50px;
+  border: none;
+  background: var(--primary);
+  color: white;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 @keyframes fadeIn {

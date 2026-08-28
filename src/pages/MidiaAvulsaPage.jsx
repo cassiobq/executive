@@ -1,7 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Settings2, Check, Camera, Plus, Trash2, Home } from 'lucide-react';
+import { ArrowLeft, Settings2, Check, Camera, Plus, Trash2, Home, FileDown, FileSpreadsheet, X } from 'lucide-react';
 import { fetchAllSheetData } from '../services/sheetsService';
 import MidiaAvulsaCard from '../components/MidiaAvulsaCard';
+import MapaInsercoes from '../components/MapaInsercoes';
+import MapaInsercoesSemanal from '../components/MapaInsercoesSemanal';
+import PISlide from '../components/PISlide';
+import ResumoSlidePage from '../components/ResumoSlidePage';
+import { getAllowedWeekdays, markQuantity } from '../utils/weekLock';
+import { computeTitulosUsados } from '../utils/titulos';
 
 const parseNum = (val) => {
     if (!val) return 0;
@@ -24,11 +30,16 @@ const PRACAS = [
 
 const SECONDS_OPTIONS = [10, 15, 30];
 const MAX_ROWS = 13;
+// Acima disso, tabela + resumo não cabem numa página só — o resumo (visualizações,
+// preços, observações) vira uma 2ª página.
+const MAX_ROWS_SINGLE_PAGE = 8;
 
 const MONTH_NAMES = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
+
+const MONTH_ABBR = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
 const getNextMonths = () => {
     const currentMonthIdx = new Date().getMonth();
@@ -39,6 +50,18 @@ const getNextMonths = () => {
             offset: i === 0 ? '' : `_${i + 1}`
         };
     });
+};
+
+// Resolve um offset ('', '_2', '_3', '_4') pro mês/ano real e nº de dias daquele mês,
+// a partir de hoje — mesmo índice usado em getNextMonths().
+const resolveMonthYear = (offset) => {
+    const i = offset === '' ? 0 : parseInt(offset.slice(1), 10) - 1;
+    const now = new Date();
+    const base = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const monthIndex = base.getMonth();
+    const year = base.getFullYear();
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+    return { monthIndex, year, daysInMonth, label: MONTH_NAMES[monthIndex] };
 };
 
 // Toggle switch component
@@ -63,7 +86,7 @@ const Toggle = ({ checked, onChange }) => (
     </div>
 );
 
-export default function MidiaAvulsaPage({ onBack }) {
+export default function MidiaAvulsaPage({ onBack, active }) {
     const [loading, setLoading] = useState(true);
     const [db, setDb] = useState({ programas: [], patrocinios: [] });
 
@@ -71,6 +94,14 @@ export default function MidiaAvulsaPage({ onBack }) {
     const [availableMonths] = useState(getNextMonths());
     const [selectedMonthOffset, setSelectedMonthOffset] = useState('');
     const [tableRows, setTableRows] = useState([]);
+    const [formato, setFormato] = useState('card'); // 'card' | 'slide'
+    const [titulos, setTitulos] = useState([{ letra: 'A', nome: 'Campanha' }]);
+    const [tituloAtivo, setTituloAtivo] = useState('A');
+    // Popup de "Ver resumo e exportar" no formato slide (mobile) — mostra a
+    // grade desktop (page1Ref/page2Ref) num overlay de tela cheia, em vez de
+    // trocar a página inteira de layout como o mecanismo antigo fazia.
+    const [exportPreviewOpen, setExportPreviewOpen] = useState(false);
+    const [mapRows, setMapRows] = useState([]); // [{ sigla, marks: { [day]: string } }] — usado no formato slide
 
     // Searchbox state
     const [busca, setBusca] = useState('');
@@ -87,8 +118,12 @@ export default function MidiaAvulsaPage({ onBack }) {
 
     const [isMobileTrayOpen, setIsMobileTrayOpen] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
+    const [piCopied, setPiCopied] = useState(false);
     const [isFlashing, setIsFlashing] = useState(false);
     const cardRef = useRef(null);
+    const page1Ref = useRef(null);
+    const page2Ref = useRef(null);
+    const piRef = useRef(null);
 
     useEffect(() => {
         fetchAllSheetData().then(res => {
@@ -97,9 +132,41 @@ export default function MidiaAvulsaPage({ onBack }) {
         });
     }, []);
 
+    // Trocar de formato sempre fecha o popup de exportação (em vez de ficar
+    // aberto sobre um formato que não está mais visível).
+    useEffect(() => {
+        setExportPreviewOpen(false);
+    }, [formato]);
+
+    // Enquanto o popup de exportação está aberto, libera pinça/zoom nativo do
+    // navegador pra o usuário conferir o mapa/preço por inteiro antes de
+    // compartilhar/baixar. O popup em si (.slide-scale-wrapper.export-preview-open,
+    // ver index.css) já é um overlay de tela cheia — não precisa de nenhum
+    // ajuste de layout do resto da página, só liberar o zoom.
+    useEffect(() => {
+        const zoomActive = Boolean(active) && exportPreviewOpen;
+        const meta = document.querySelector('meta[name="viewport"]');
+        const DEFAULT_VIEWPORT = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0';
+        const ZOOM_VIEWPORT = 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=1';
+        if (meta) meta.setAttribute('content', zoomActive ? ZOOM_VIEWPORT : DEFAULT_VIEWPORT);
+        return () => {
+            if (meta) meta.setAttribute('content', DEFAULT_VIEWPORT);
+        };
+    }, [active, exportPreviewOpen]);
+
+    // Ao trocar de mês, remove marcações de dias que não existem no novo mês (ex: dia 31 num mês de 30)
+    useEffect(() => {
+        const { daysInMonth } = resolveMonthYear(selectedMonthOffset);
+        setMapRows(prev => prev.map(row => ({
+            ...row,
+            marks: Object.fromEntries(Object.entries(row.marks).filter(([d]) => Number(d) <= daysInMonth)),
+        })));
+    }, [selectedMonthOffset]);
+
     // --- Derived data ---
     const pracaLabel = PRACAS.find(p => p.key === selectedPraca)?.label || selectedPraca;
     const monthLabel = availableMonths.find(m => m.offset === selectedMonthOffset)?.label || '';
+    const { monthIndex: mapMonthIndex, year: mapYear, daysInMonth: mapDaysInMonth } = resolveMonthYear(selectedMonthOffset);
 
     const siglasOptions = db.programas
         .filter(p => p.sigla)
@@ -111,24 +178,48 @@ export default function MidiaAvulsaPage({ onBack }) {
         return String(p.sigla).toLowerCase().includes(q) || String(p.programa).toLowerCase().includes(q);
     });
 
-    const enrichedRows = tableRows.map(row => {
+    // No formato slide, as "inserções" de cada linha são derivadas da soma das quantidades
+    // marcadas no mapa (ex.: "A"=1, "2B"=2), em vez do número digitado na sidebar (formato
+    // card). O objeto `marks` segue junto (usado pela grade do mapa) e mantém o mesmo índice
+    // de mapRows.
+    const sourceRows = formato === 'slide'
+        ? mapRows.map(r => ({
+            sigla: r.sigla,
+            insercoes: Object.values(r.marks).reduce((s, mark) => s + markQuantity(mark), 0),
+            marks: r.marks,
+        }))
+        : tableRows;
+
+    const enrichedRows = sourceRows.map(row => {
         const prog = db.programas.find(p => String(p.sigla).trim() === String(row.sigla).trim()) || {};
         const colKey = selectedMonthOffset ? `${selectedPraca}${selectedMonthOffset}` : selectedPraca;
-        const valor30 = parseNum(prog[colKey]) * row.insercoes;
+        const unitValor30 = parseNum(prog[colKey]);
+        const valor30 = unitValor30 * row.insercoes;
         const coef15 = parseNum(prog.coeficiente_15);
         const coef10 = parseNum(prog.coeficiente_10);
+        // Correct formula: valor - (valor * (1 - coeficiente)) — mesma fórmula aplicada
+        // ao valor unitário, pra manter total = unitário × inserções em qualquer segundagem.
+        const unitValor15 = unitValor30 - (unitValor30 * (1 - coef15));
+        const unitValor10 = unitValor30 - (unitValor30 * (1 - coef10));
         return {
+            sigla: row.sigla,
             programa: prog.programa || row.sigla,
             dias: prog.dias || '—',
+            allowedWeekdays: getAllowedWeekdays(prog.dias),
             horario: prog.horario || '—',
             insercoes: row.insercoes,
+            marks: row.marks || {},
             valor30,
-            // Correct formula: valor - (valor * (1 - coeficiente))
-            valor15: valor30 - (valor30 * (1 - coef15)),
-            valor10: valor30 - (valor30 * (1 - coef10)),
+            valor15: unitValor15 * row.insercoes,
+            valor10: unitValor10 * row.insercoes,
+            unitValor30,
+            unitValor15,
+            unitValor10,
             audienciaRvd: parseNum(prog.audiencia_rvd),
         };
     });
+
+    const titulosUsados = computeTitulosUsados(titulos, mapRows);
 
     const total30 = enrichedRows.reduce((s, r) => s + r.valor30, 0);
     const total15 = enrichedRows.reduce((s, r) => s + r.valor15, 0);
@@ -149,6 +240,27 @@ export default function MidiaAvulsaPage({ onBack }) {
         }));
 
     const numVisibleCards = secondsCards.length;
+    const useSinglePage = mapRows.length <= MAX_ROWS_SINGLE_PAGE;
+
+    // PI só faz sentido com uma duração/valor/desconto únicos pro documento
+    // inteiro — se houver mais de uma segundagem ativa ao mesmo tempo, o
+    // botão fica desabilitado em vez de tentar adivinhar qual usar (ver spec).
+    const activeSegundos = secondsCards.length === 1 ? secondsCards[0].segundos : null;
+    const canExportPI = activeSegundos !== null;
+    const piDuracaoLabel = activeSegundos ? `${activeSegundos}"` : '';
+    const piDescontoPercent = activeSegundos ? (activeSeconds[activeSegundos]?.discount || 0) : 0;
+    const piValorTabela = activeSegundos ? totalMap[activeSegundos] : 0;
+    const piTotalMidia = piValorTabela * (1 - piDescontoPercent / 100);
+    const piMonthLabelShort = `${MONTH_ABBR[mapMonthIndex]}/${String(mapYear).slice(-2)}`;
+    const piRows = enrichedRows.map(r => ({
+        sigla: r.sigla,
+        programa: r.programa,
+        dias: r.dias,
+        marks: r.marks,
+        insercoes: r.insercoes,
+        unit: activeSegundos ? r[`unitValor${activeSegundos}`] : 0,
+        total: activeSegundos ? r[`valor${activeSegundos}`] : 0,
+    }));
 
     // --- Handlers ---
     const handleSelectSigla = (p) => {
@@ -167,6 +279,61 @@ export default function MidiaAvulsaPage({ onBack }) {
 
     const handleDeleteRow = (idx) => {
         setTableRows(prev => prev.filter((_, i) => i !== idx));
+    };
+
+    const handleAddMapRow = (sigla) => {
+        if (!sigla || mapRows.length >= MAX_ROWS) return;
+        setMapRows(prev => [...prev, { sigla, marks: {} }]);
+    };
+
+    const handleDeleteMapRow = (idx) => {
+        setMapRows(prev => prev.filter((_, i) => i !== idx));
+    };
+
+    // markStr === '' remove a marcação do dia; senão seta (já validado no componente, ex.: "A", "2B").
+    const handleSetDayMark = (rowIdx, day, markStr) => {
+        setMapRows(prev => prev.map((row, i) => {
+            if (i !== rowIdx) return row;
+            const marks = { ...row.marks };
+            if (!markStr) delete marks[day];
+            else marks[day] = markStr;
+            return { ...row, marks };
+        }));
+    };
+
+    const handleReorderRows = (fromIdx, toIdx) => {
+        if (fromIdx === toIdx) return;
+        setMapRows(prev => {
+            const next = [...prev];
+            const [moved] = next.splice(fromIdx, 1);
+            next.splice(toIdx, 0, moved);
+            return next;
+        });
+    };
+
+    // Copia, pra TODOS os programas do mapa, as marcações da semana anterior (mondayDay - 7)
+    // pra semana que começa em mondayDay, sobrescrevendo o que já estava marcado no destino.
+    const handleReplicateWeek = (mondayDay) => {
+        const { daysInMonth } = resolveMonthYear(selectedMonthOffset);
+        setMapRows(prev => prev.map(row => {
+            const marks = { ...row.marks };
+            for (let d = mondayDay; d < mondayDay + 7 && d <= daysInMonth; d++) {
+                const sourceDay = d - 7;
+                if (sourceDay < 1) continue;
+                const sourceMark = row.marks[sourceDay];
+                if (sourceMark) marks[d] = sourceMark;
+                else delete marks[d];
+            }
+            return { ...row, marks };
+        }));
+    };
+
+    const handleAddTitulo = (letra) => {
+        setTitulos(prev => [...prev, { letra, nome: '' }]);
+    };
+
+    const handleRenameTitulo = (letra, novoNome) => {
+        setTitulos(prev => prev.map(t => (t.letra === letra ? { ...t, nome: novoNome } : t)));
     };
 
     const toggleSeconds = (s) => {
@@ -211,6 +378,105 @@ export default function MidiaAvulsaPage({ onBack }) {
         }
     };
 
+    const handleExportPdf = async () => {
+        if (!page1Ref.current) return;
+        setIsFlashing(true);
+        setTimeout(() => setIsFlashing(false), 400);
+        try {
+            const htmlToImage = await import('html-to-image');
+            const { jsPDF } = await import('jspdf');
+            const exportOpts = {
+                quality: 0.92,
+                pixelRatio: 2,
+                backgroundColor: '#ffffff',
+                filter: (node) => !node.classList?.contains('no-export'),
+            };
+            const widthMm = 297;
+            const heightMm = 210;
+            const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [widthMm, heightMm], compress: true });
+
+            const img1 = await htmlToImage.toJpeg(page1Ref.current, exportOpts);
+            pdf.addImage(img1, 'JPEG', 0, 0, widthMm, heightMm);
+
+            if (!useSinglePage && page2Ref.current) {
+                const img2 = await htmlToImage.toJpeg(page2Ref.current, exportOpts);
+                pdf.addPage([widthMm, heightMm], 'landscape');
+                pdf.addImage(img2, 'JPEG', 0, 0, widthMm, heightMm);
+            }
+
+            // No popup mobile, tenta abrir o menu nativo de compartilhar (WhatsApp
+            // etc.) com o PDF já pronto; sem suporte (a maioria dos navegadores
+            // desktop, e alguns mobile antigos), cai pro download direto de sempre.
+            const pdfBlob = pdf.output('blob');
+            const pdfFile = new File([pdfBlob], 'midia-avulsa-mapa.pdf', { type: 'application/pdf' });
+            if (navigator.canShare?.({ files: [pdfFile] })) {
+                try {
+                    await navigator.share({ files: [pdfFile], title: 'Mapa de Inserções' });
+                } catch (shareErr) {
+                    if (shareErr?.name === 'AbortError') return; // usuário cancelou o menu de compartilhar
+                    // Compartilhar falhou/foi bloqueado (ex.: NotAllowedError do
+                    // iOS Safari) — o PDF já foi gerado com sucesso, então baixa
+                    // direto em vez de descartar o trabalho e mostrar erro genérico.
+                    pdf.save('midia-avulsa-mapa.pdf');
+                }
+            } else {
+                pdf.save('midia-avulsa-mapa.pdf');
+            }
+
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+        } catch (err) {
+            if (err?.name === 'AbortError') return; // usuário cancelou o menu de compartilhar
+            alert('Erro ao gerar PDF. Tente novamente.');
+        }
+    };
+
+    const handleExportPI = async () => {
+        if (!canExportPI) {
+            alert('Ative só uma segundagem pra exportar a PI.');
+            return;
+        }
+        if (!piRef.current) return;
+        setIsFlashing(true);
+        setTimeout(() => setIsFlashing(false), 400);
+        try {
+            const htmlToImage = await import('html-to-image');
+            const { jsPDF } = await import('jspdf');
+            const exportOpts = {
+                quality: 0.92,
+                pixelRatio: 2,
+                backgroundColor: '#ffffff',
+                filter: (node) => !node.classList?.contains('no-export'),
+            };
+            const widthMm = 297;
+            const heightMm = 210;
+            const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [widthMm, heightMm], compress: true });
+
+            const img = await htmlToImage.toJpeg(piRef.current, exportOpts);
+            pdf.addImage(img, 'JPEG', 0, 0, widthMm, heightMm);
+
+            const pdfBlob = pdf.output('blob');
+            const fileName = `PI-${selectedPraca}-${MONTH_ABBR[mapMonthIndex]}${mapYear}.pdf`;
+            const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+            if (navigator.canShare?.({ files: [pdfFile] })) {
+                try {
+                    await navigator.share({ files: [pdfFile], title: 'PI - Pedido de Inserção' });
+                } catch (shareErr) {
+                    if (shareErr?.name === 'AbortError') return; // usuário cancelou o menu de compartilhar
+                    pdf.save(fileName);
+                }
+            } else {
+                pdf.save(fileName);
+            }
+
+            setPiCopied(true);
+            setTimeout(() => setPiCopied(false), 2000);
+        } catch (err) {
+            if (err?.name === 'AbortError') return;
+            alert('Erro ao gerar PI. Tente novamente.');
+        }
+    };
+
     if (loading) return (
         <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Outfit', sans-serif", color: '#5A1CDB', fontSize: '1rem', fontWeight: 600 }}>
             Carregando dados...
@@ -233,7 +499,7 @@ export default function MidiaAvulsaPage({ onBack }) {
     const atLimit = tableRows.length >= MAX_ROWS;
 
     return (
-        <div className="app-container">
+        <div className="app-container midia-avulsa-app">
             {isMobileTrayOpen && (
                 <div className="mobile-overlay" onClick={() => setIsMobileTrayOpen(false)} />
             )}
@@ -255,6 +521,26 @@ export default function MidiaAvulsaPage({ onBack }) {
                     <ArrowLeft size={16} /> Início
                 </button>
 
+                <div className="form-group">
+                    <label>Formato</label>
+                    <div className="segmented-control">
+                        <button
+                            type="button"
+                            className={formato === 'card' ? 'active' : ''}
+                            onClick={() => setFormato('card')}
+                        >
+                            Card
+                        </button>
+                        <button
+                            type="button"
+                            className={formato === 'slide' ? 'active' : ''}
+                            onClick={() => setFormato('slide')}
+                        >
+                            Slide
+                        </button>
+                    </div>
+                </div>
+
                 <div style={{ display: 'flex', gap: '0.8rem', marginBottom: '1rem' }}>
                     <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
                         <label>Mês</label>
@@ -270,7 +556,9 @@ export default function MidiaAvulsaPage({ onBack }) {
                     </div>
                 </div>
 
-                {/* Table Builder */}
+                {/* Table Builder — só no formato Card; no Slide, os programas são adicionados direto na grade do mapa */}
+                {formato === 'card' && (
+                <>
                 <h3 style={{ marginTop: '1.5rem', marginBottom: '0.75rem' }}>
                     Programas {atLimit && <span style={{ fontSize: '0.7rem', color: '#e74c3c', fontWeight: 600 }}>(limite atingido)</span>}
                 </h3>
@@ -369,6 +657,8 @@ export default function MidiaAvulsaPage({ onBack }) {
                         })}
                     </div>
                 )}
+                </>
+                )}
 
                 {/* Seconds Cards */}
                 <h3 style={{ marginTop: '1.5rem', marginBottom: '0.75rem' }}>Cards de Preço</h3>
@@ -416,35 +706,188 @@ export default function MidiaAvulsaPage({ onBack }) {
             </aside>
 
             <main className="main-content">
-                <div className="preview-scale-wrapper">
-                    <div ref={cardRef}>
-                        <MidiaAvulsaCard
-                            praca={pracaLabel}
-                            tableRows={enrichedRows}
-                            secondsCards={secondsCards}
-                            numVisibleCards={numVisibleCards}
-                            totalVisualizacoes={totalVisualizacoes}
-                            month={monthLabel}
-                        />
+                {formato === 'card' ? (
+                    <div className="preview-scale-wrapper">
+                        <div ref={cardRef}>
+                            <MidiaAvulsaCard
+                                praca={pracaLabel}
+                                tableRows={enrichedRows}
+                                secondsCards={secondsCards}
+                                numVisibleCards={numVisibleCards}
+                                totalVisualizacoes={totalVisualizacoes}
+                                month={monthLabel}
+                            />
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    <>
+                        <div className="mobile-slide-editor">
+                            <MapaInsercoesSemanal
+                                pracaLabel={pracaLabel}
+                                monthLabel={monthLabel}
+                                year={mapYear}
+                                monthIndex={mapMonthIndex}
+                                daysInMonth={mapDaysInMonth}
+                                rows={enrichedRows}
+                                programas={db.programas}
+                                onSetDayMark={handleSetDayMark}
+                                onAddRow={handleAddMapRow}
+                                onDeleteRow={handleDeleteMapRow}
+                                onReorderRows={handleReorderRows}
+                                onReplicateWeek={handleReplicateWeek}
+                                maxRows={MAX_ROWS}
+                                titulos={titulos}
+                                tituloAtivo={tituloAtivo}
+                                onSetTituloAtivo={setTituloAtivo}
+                                onAddTitulo={handleAddTitulo}
+                                onRenameTitulo={handleRenameTitulo}
+                                onShowResumo={() => setExportPreviewOpen(true)}
+                            />
+                        </div>
+                        <div className={`slide-scale-wrapper${exportPreviewOpen ? ' export-preview-open' : ''}`}>
+                            {exportPreviewOpen && (
+                                <button
+                                    type="button"
+                                    className="export-preview-close-btn"
+                                    onClick={() => setExportPreviewOpen(false)}
+                                    aria-label="Fechar"
+                                >
+                                    <X size={20} />
+                                </button>
+                            )}
+                            <div ref={page1Ref}>
+                                <MapaInsercoes
+                                    pracaLabel={pracaLabel}
+                                    monthLabel={monthLabel}
+                                    year={mapYear}
+                                    monthIndex={mapMonthIndex}
+                                    daysInMonth={mapDaysInMonth}
+                                    rows={enrichedRows}
+                                    programas={db.programas}
+                                    activeSecondsList={secondsCards}
+                                    onSetDayMark={handleSetDayMark}
+                                    onAddRow={handleAddMapRow}
+                                    onDeleteRow={handleDeleteMapRow}
+                                    onReorderRows={handleReorderRows}
+                                    onReplicateWeek={handleReplicateWeek}
+                                    maxRows={MAX_ROWS}
+                                    compact={useSinglePage}
+                                    showResumo={useSinglePage}
+                                    resumoProps={{ totalVisualizacoes, secondsCards, numVisibleCards }}
+                                    titulosUsados={titulosUsados}
+                                />
+                            </div>
+                            {!useSinglePage && (
+                                <div ref={page2Ref}>
+                                    <ResumoSlidePage
+                                        pracaLabel={pracaLabel}
+                                        monthLabel={monthLabel}
+                                        year={mapYear}
+                                        totalVisualizacoes={totalVisualizacoes}
+                                        secondsCards={secondsCards}
+                                        numVisibleCards={numVisibleCards}
+                                    />
+                                </div>
+                            )}
+                            {exportPreviewOpen && (
+                                <div className="export-preview-actions">
+                                    <button
+                                        type="button"
+                                        className="export-preview-share-btn"
+                                        onClick={handleExportPdf}
+                                    >
+                                        {isCopied ? <Check size={18} /> : <FileDown size={18} />}
+                                        Exportar PDF
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`export-preview-share-btn${canExportPI ? '' : ' is-blocked'}`}
+                                        onClick={handleExportPI}
+                                        title={canExportPI ? 'Exportar para PI' : 'Ative só uma segundagem pra exportar a PI'}
+                                    >
+                                        {piCopied ? <Check size={18} /> : <FileSpreadsheet size={18} />}
+                                        Exportar para PI
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        <div style={{ position: 'fixed', top: 0, left: '-10000px', pointerEvents: 'none' }}>
+                            <div ref={piRef}>
+                                <PISlide
+                                    pracaKey={selectedPraca}
+                                    pracaLabel={pracaLabel}
+                                    monthLabelLong={monthLabel}
+                                    monthLabelShort={piMonthLabelShort}
+                                    year={mapYear}
+                                    monthIndex={mapMonthIndex}
+                                    daysInMonth={mapDaysInMonth}
+                                    rows={piRows}
+                                    titulosUsados={titulosUsados}
+                                    duracaoLabel={piDuracaoLabel}
+                                    descontoPercent={piDescontoPercent}
+                                    valorTabela={piValorTabela}
+                                    totalMidia={piTotalMidia}
+                                />
+                            </div>
+                        </div>
+                    </>
+                )}
 
-                <div className="mobile-floating-actions">
-                    <button className="mobile-home-btn" onClick={onBack} title="Início">
-                        <Home size={22} />
-                    </button>
-                    <button className="mobile-tray-toggle" onClick={() => setIsMobileTrayOpen(true)}>
-                        <Settings2 size={24} /> Editar Card
-                    </button>
-                    <button
-                        className="mobile-copy-btn"
-                        onClick={handleCopyImage}
-                        style={{ backgroundColor: isCopied ? 'rgba(10,199,91,0.85)' : '' }}
-                        title="Copiar Imagem"
-                    >
-                        {isCopied ? <Check size={22} /> : <Camera size={22} />}
-                    </button>
-                </div>
+                {/* Escondida enquanto o popup de exportação está aberto: o overlay
+                    (.slide-scale-wrapper.export-preview-open) é semitransparente
+                    de propósito (pra permitir pinça/zoom sobre um fundo escurecido),
+                    então essa barra fixa ficaria visível "vazando" por baixo dele
+                    em vez de coberta — não renderiza pra evitar isso. */}
+                {!exportPreviewOpen && (
+                    <div className="mobile-floating-actions">
+                        <button className="mobile-home-btn" onClick={onBack} title="Início">
+                            <Home size={22} />
+                        </button>
+                        <button className="mobile-tray-toggle" onClick={() => setIsMobileTrayOpen(true)}>
+                            <Settings2 size={24} /> Editar Card
+                        </button>
+                        {formato === 'card' ? (
+                            <button
+                                className="mobile-copy-btn"
+                                onClick={handleCopyImage}
+                                style={{ backgroundColor: isCopied ? 'rgba(10,199,91,0.85)' : '' }}
+                                title="Copiar Imagem"
+                            >
+                                {isCopied ? <Check size={22} /> : <Camera size={22} />}
+                            </button>
+                        ) : (
+                            <button
+                                className="mobile-copy-btn"
+                                onClick={() => {
+                                    // Este botão é estilizado (e o popup de resumo só existe)
+                                    // dentro do breakpoint mobile — no desktop, sem essa
+                                    // checagem, ele injetaria o popup sem CSS e o usuário
+                                    // perderia o download direto que já existia antes.
+                                    const isMobileBreakpoint = window.matchMedia(
+                                        '(max-width: 768px), (max-height: 500px) and (orientation: landscape)'
+                                    ).matches;
+                                    if (isMobileBreakpoint) {
+                                        setExportPreviewOpen(true);
+                                    } else {
+                                        handleExportPdf();
+                                    }
+                                }}
+                                title="Ver resumo e exportar"
+                            >
+                                <FileDown size={22} />
+                            </button>
+                        )}
+                        {formato !== 'card' && (
+                            <button
+                                className={`mobile-copy-btn${canExportPI ? '' : ' is-blocked'}`}
+                                onClick={handleExportPI}
+                                title={canExportPI ? 'Exportar para PI' : 'Ative só uma segundagem pra exportar a PI'}
+                            >
+                                {piCopied ? <Check size={22} /> : <FileSpreadsheet size={22} />}
+                            </button>
+                        )}
+                    </div>
+                )}
             </main>
 
             {/* Camera flash overlay */}
