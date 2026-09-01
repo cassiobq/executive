@@ -4,7 +4,6 @@ import { fetchAllSheetData } from '../services/sheetsService';
 import MidiaAvulsaCard from '../components/MidiaAvulsaCard';
 import MapaInsercoes from '../components/MapaInsercoes';
 import MapaInsercoesSemanal from '../components/MapaInsercoesSemanal';
-import PISlide from '../components/PISlide';
 import ResumoSlidePage from '../components/ResumoSlidePage';
 import { getAllowedWeekdays, markQuantity } from '../utils/weekLock';
 import { computeTitulosUsados } from '../utils/titulos';
@@ -40,6 +39,16 @@ const MONTH_NAMES = [
 ];
 
 const MONTH_ABBR = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+// Linha da tabela de títulos (aba "Patrocínios_") pra cada letra, no
+// Modelo_de_PI_Limpo.xlsx real — A=16 até F=21 (G=22 nunca é usado por
+// nós, LETRAS_TITULO em utils/titulos.js para em F).
+const TITULO_ROW = { A: 16, B: 17, C: 18, D: 19, E: 20, F: 21 };
+// Primeira linha de programa na grade de dias da mesma aba; cada linha
+// seguinte é uma unidade abaixo (32, 33, 34...).
+const PROGRAMA_FIRST_ROW = 32;
+// Coluna H (8ª) = dia 1 do mês na grade; dia 31 cai na coluna AL (38ª).
+const DAY_COL_OFFSET = 7;
 
 const getNextMonths = () => {
     const currentMonthIdx = new Date().getMonth();
@@ -123,7 +132,6 @@ export default function MidiaAvulsaPage({ onBack, active }) {
     const cardRef = useRef(null);
     const page1Ref = useRef(null);
     const page2Ref = useRef(null);
-    const piRef = useRef(null);
 
     useEffect(() => {
         fetchAllSheetData().then(res => {
@@ -245,21 +253,20 @@ export default function MidiaAvulsaPage({ onBack, active }) {
     // PI só faz sentido com uma duração/valor/desconto únicos pro documento
     // inteiro — se houver mais de uma segundagem ativa ao mesmo tempo, o
     // botão fica desabilitado em vez de tentar adivinhar qual usar (ver spec).
+    // Os totais (Valor Tabela, Desconto, Total Mídia) não são pré-computados
+    // aqui: são fórmulas já existentes na planilha real, recalculadas pelo
+    // Excel/Sheets quando o arquivo é aberto — só escrevemos os dados de
+    // entrada (sigla, marcas, valor unitário, desconto).
     const activeSegundos = secondsCards.length === 1 ? secondsCards[0].segundos : null;
     const canExportPI = activeSegundos !== null;
     const piDuracaoLabel = activeSegundos ? `${activeSegundos}"` : '';
     const piDescontoPercent = activeSegundos ? (activeSeconds[activeSegundos]?.discount || 0) : 0;
-    const piValorTabela = activeSegundos ? totalMap[activeSegundos] : 0;
-    const piTotalMidia = piValorTabela * (1 - piDescontoPercent / 100);
-    const piMonthLabelShort = `${MONTH_ABBR[mapMonthIndex]}/${String(mapYear).slice(-2)}`;
     const piRows = enrichedRows.map(r => ({
         sigla: r.sigla,
         programa: r.programa,
         dias: r.dias,
         marks: r.marks,
-        insercoes: r.insercoes,
         unit: activeSegundos ? r[`unitValor${activeSegundos}`] : 0,
-        total: activeSegundos ? r[`valor${activeSegundos}`] : 0,
     }));
 
     // --- Handlers ---
@@ -431,42 +438,80 @@ export default function MidiaAvulsaPage({ onBack, active }) {
         }
     };
 
+    // Fallback de download quando não há compartilhamento nativo (a maioria
+    // dos desktops) — não existe um "pdf.save()" equivalente pra Blob genérico,
+    // então disparamos o download via link temporário.
+    const downloadBlob = (blob, fileName) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+
+    // Gera a PI preenchendo o arquivo real (Modelo_de_PI_Limpo.xlsx, servido
+    // como asset estático) em vez de recriar o layout — só assim a fidelidade
+    // visual é garantida (fonte, cores, bordas, logo, tudo já vem do arquivo
+    // original; só escrevemos valor nas células de entrada, nunca mexemos em
+    // estilo). O usuário abre no Excel/Sheets e salva/imprime como PDF de lá.
+    // Ver docs/superpowers/specs/2026-08-25-exportar-pi-pdf.md.
     const handleExportPI = async () => {
         if (!canExportPI) {
             alert('Ative só uma segundagem pra exportar a PI.');
             return;
         }
-        if (!piRef.current) return;
         setIsFlashing(true);
         setTimeout(() => setIsFlashing(false), 400);
         try {
-            const htmlToImage = await import('html-to-image');
-            const { jsPDF } = await import('jspdf');
-            const exportOpts = {
-                quality: 0.92,
-                pixelRatio: 2,
-                backgroundColor: '#ffffff',
-                filter: (node) => !node.classList?.contains('no-export'),
-            };
-            const widthMm = 297;
-            const heightMm = 210;
-            const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [widthMm, heightMm], compress: true });
+            const ExcelJS = await import('exceljs');
+            const templateUrl = `${import.meta.env.BASE_URL}pi-template.xlsx`;
+            const templateBuffer = await fetch(templateUrl).then(r => r.arrayBuffer());
 
-            const img = await htmlToImage.toJpeg(piRef.current, exportOpts);
-            pdf.addImage(img, 'JPEG', 0, 0, widthMm, heightMm);
+            const workbook = new ExcelJS.Workbook();
+            await workbook.xlsx.load(templateBuffer);
+            const ws = workbook.getWorksheet('Patrocínios_');
 
-            const pdfBlob = pdf.output('blob');
-            const fileName = `PI-${selectedPraca}-${MONTH_ABBR[mapMonthIndex]}${mapYear}.pdf`;
-            const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
-            if (navigator.canShare?.({ files: [pdfFile] })) {
+            ws.getCell('A3').value = pracaLabel;
+            ws.getCell('AH4').value = new Date(mapYear, mapMonthIndex, 1);
+            ws.getCell('BA4').value = new Date(); // substitui a fórmula =NOW() por um valor fixo (documento gerado, não mais "ao vivo")
+
+            titulosUsados.forEach(t => {
+                const row = TITULO_ROW[t.letra];
+                if (!row) return; // só A-F existem na planilha real usada por nós
+                ws.getCell(`B${row}`).value = t.nome;
+                ws.getCell(`O${row}`).value = piDuracaoLabel;
+            });
+
+            piRows.forEach((row, i) => {
+                const r = PROGRAMA_FIRST_ROW + i;
+                ws.getCell(`A${r}`).value = row.sigla;
+                ws.getCell(`B${r}`).value = row.programa;
+                ws.getCell(`C${r}`).value = row.dias;
+                ws.getCell(`F${r}`).value = piDescontoPercent / 100;
+                ws.getCell(`AY${r}`).value = piDuracaoLabel;
+                ws.getCell(`AZ${r}`).value = row.unit;
+                Object.entries(row.marks).forEach(([day, mark]) => {
+                    if (!mark) return;
+                    ws.getCell(r, Number(day) + DAY_COL_OFFSET).value = mark;
+                });
+            });
+
+            ws.getCell('BA50').value = piDescontoPercent / 100;
+
+            const outBuffer = await workbook.xlsx.writeBuffer();
+            const fileName = `PI-${selectedPraca}-${MONTH_ABBR[mapMonthIndex]}${mapYear}.xlsx`;
+            const xlsxBlob = new Blob([outBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const xlsxFile = new File([xlsxBlob], fileName, { type: xlsxBlob.type });
+            if (navigator.canShare?.({ files: [xlsxFile] })) {
                 try {
-                    await navigator.share({ files: [pdfFile], title: 'PI - Pedido de Inserção' });
+                    await navigator.share({ files: [xlsxFile], title: 'PI - Pedido de Inserção' });
                 } catch (shareErr) {
                     if (shareErr?.name === 'AbortError') return; // usuário cancelou o menu de compartilhar
-                    pdf.save(fileName);
+                    downloadBlob(xlsxBlob, fileName);
                 }
             } else {
-                pdf.save(fileName);
+                downloadBlob(xlsxBlob, fileName);
             }
 
             setPiCopied(true);
@@ -810,24 +855,6 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                                     </button>
                                 </div>
                             )}
-                        </div>
-                        <div style={{ position: 'fixed', top: 0, left: '-10000px', pointerEvents: 'none' }}>
-                            <div ref={piRef}>
-                                <PISlide
-                                    pracaKey={selectedPraca}
-                                    pracaLabel={pracaLabel}
-                                    monthLabelShort={piMonthLabelShort}
-                                    year={mapYear}
-                                    monthIndex={mapMonthIndex}
-                                    daysInMonth={mapDaysInMonth}
-                                    rows={piRows}
-                                    titulosUsados={titulosUsados}
-                                    duracaoLabel={piDuracaoLabel}
-                                    descontoPercent={piDescontoPercent}
-                                    valorTabela={piValorTabela}
-                                    totalMidia={piTotalMidia}
-                                />
-                            </div>
                         </div>
                     </>
                 )}
