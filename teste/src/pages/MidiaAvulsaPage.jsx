@@ -816,7 +816,6 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                                 <PISlide
                                     pracaKey={selectedPraca}
                                     pracaLabel={pracaLabel}
-                                    monthLabelLong={monthLabel}
                                     monthLabelShort={piMonthLabelShort}
                                     year={mapYear}
                                     monthIndex={mapMonthIndex}
