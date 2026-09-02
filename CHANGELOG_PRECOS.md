@@ -15,7 +15,20 @@ Histórico de atualizações dos dados de preço/programação usados pelo app (
 
 ## Histórico
 
-### 2026-08-12 — (não commitado ainda)
+### 2026-09-02 — Tabela de **Setembro/2026**
+- **Fonte:** `09. Setembro 2026 - Modelo PI - Rede Anhanguera.xlsx` (aba "Preços Globo"), filtrada por `canal=1`, `Mês=9`, `Ano=2026`, coluna `30"`.
+- **Mapeamento praça → `abrangencia` confirmado na própria planilha** (não mais inferido): cada aba de praça monta a chave de busca com `CONCAT(mnemônico; $C$36)` contra a coluna `Chave2_Relação`, e o `C36` de cada aba resolve pra sigla da praça via `BDados!B2:C14` — `GO1`=Goiânia, `GO2`=Anápolis, `RVD`=Rio Verde, `LZA`=Luziânia, `IBI`=Itumbiara, `CAT`=Catalão, `PRT`=Porangatu, `JAT`=Jataí. O join com o app é por **sigla** (`programas.json.sigla` = `mnemonico`), não por nome: os nomes divergem de propósito em 5 programas (ex. app "BOM DIA GOIÁS" / planilha "Bom Dia Praça").
+- `valores.json`: **112 valores atualizados** em 14 programas × 8 praças (campo base de cada praça; `_2/_3/_4` não tocados). Os outros 67 programas vieram com preço idêntico ao de agosto.
+- Aplicado nos **dois apps** (`src/data/` e `teste/src/data/`), que estavam idênticos.
+- Validação da metodologia: das 600 combinações programa × praça, **488 bateram exatamente** com o valor de agosto já salvo — se a chave de busca estivesse errada, praticamente nenhuma bateria.
+- Variação mediana: **-1,8%**. Só o futebol se mexeu com força, e de forma coerente nas 8 praças:
+  - ⚠️ **FUTEBOL Sáb (`FGGS`) caiu ~40%** (Rio Verde 1.121 → 666; Goiânia 10.779 → 6.394).
+  - FUTEBOL Qua (`FGG4`) +8%, LIBERTADORES (`FLIB`) +11%, FUTEBOL Dom (`FGGD`) +2%.
+- `FUTEBOL GLOBAL AMISTOSOS MASCULINO` (`FGAM`) estava zerado (não constava na tabela de agosto) e passou a ter preço em todas as praças (Rio Verde 1.077).
+- 6 programas seguem zerados por não constarem na tabela de Setembro — todos já estavam zerados antes, nenhum preço ficou desatualizado: `BIGB`, `BIGF`, `CLID`, `LADY`, `NOVR`, `GLCO` (sazonais tipo BBB + Globo Comunidade).
+- A planilha de Setembro traz também as tabelas de **outubro, novembro e dezembro/2026** — não aplicadas, o app usa a do mês vigente.
+
+### 2026-08-12 — [`ae7a4eb`](https://github.com/cassiobq/executive/commit/ae7a4eb)
 - **Fonte:** `Modelo PI - Rede Anhanguera.xlsx` (aba "Preços Globo"), filtrada por `canal=1`, `Mês=8`, `Ano=2026`.
 - `valores.json`: **256 valores atualizados** em 46 programas × 8 praças (campo base de cada praça; `_2/_3/_4` não tocados).
 - Metodologia validada antes de aplicar: 3 combinações programa×praça sem mudança de preço bateram exatamente com o valor já salvo (HORA UM/Goiânia=988, HORA UM/Rio Verde=199, Prato do Dia/Rio Verde=324), confirmando que a coluna "30\"" da aba "Preços Globo" é a fonte correta de `valor_base`.
