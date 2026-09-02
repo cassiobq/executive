@@ -248,11 +248,13 @@ export default function MidiaAvulsaPage({ onBack, active }) {
     const activeSegundos = secondsCards.length === 1 ? secondsCards[0].segundos : null;
     const canExportPI = activeSegundos !== null;
     const piDescontoPercent = activeSegundos ? (activeSeconds[activeSegundos]?.discount || 0) : 0;
+    const piDuracaoLabel = activeSegundos ? `${activeSegundos}"` : '';
     const piRows = enrichedRows.map(r => ({
         sigla: r.sigla,
         programa: r.programa,
         dias: r.dias,
         marks: r.marks,
+        unit: activeSegundos ? r[`unitValor${activeSegundos}`] : 0,
     }));
 
     // --- Handlers ---
@@ -460,12 +462,11 @@ export default function MidiaAvulsaPage({ onBack, active }) {
 
             const zip = await JSZip.loadAsync(templateBuffer);
             const sheetXml = await zip.file(piXlsx.PI_SHEET_PATH).async('string');
-            const filled = piXlsx.fillPiSheet(sheetXml, {
+            zip.file(piXlsx.PI_SHEET_PATH, piXlsx.fillPiSheet(sheetXml, {
                 descontoPercent: piDescontoPercent,
+                duracaoLabel: piDuracaoLabel,
                 rows: piRows,
-            });
-            zip.file(piXlsx.PI_SHEET_PATH, piXlsx.stripCachedValues(filled));
-            zip.remove(piXlsx.PI_CALCCHAIN_PATH);
+            }));
 
             const fileName = `PI-${selectedPraca}-${MONTH_ABBR[mapMonthIndex]}${mapYear}.xlsx`;
             const xlsxBlob = await zip.generateAsync({

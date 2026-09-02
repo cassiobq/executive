@@ -16,9 +16,6 @@
 // rId1 -> worksheets/sheet1.xml. O template é um asset fixo nosso, versionado
 // junto do código, então esse caminho não muda sem a gente saber.
 export const PI_SHEET_PATH = 'xl/worksheets/sheet1.xml';
-// O Excel reconstrói a cadeia de cálculo sozinho quando ela não existe;
-// removê-la evita que ele reaproveite dependências velhas do modelo vazio.
-export const PI_CALCCHAIN_PATH = 'xl/calcChain.xml';
 
 // Primeira linha de programa na grade de dias; as seguintes são 33, 34...
 export const PROGRAMA_FIRST_ROW = 32;
@@ -81,35 +78,22 @@ export function setCellNumber(xml, ref, value) {
     return writeCell(xml, ref, `<v>${Number(value)}</v>`);
 }
 
-// As células que preenchemos são entradas de fórmulas que já existem na
-// planilha (contagem de inserções, Valor Tabela, Total Mídia...), mas o
-// arquivo carrega o resultado em cache do modelo vazio — zero. Sem fazer
-// nada, o Excel confia no cache e abre tudo zerado.
-//
-// A saída NÃO é marcar `fullCalcOnLoad` no workbook: isso força o Excel a
-// reprocessar a pasta inteira e, na prática, ele rebaixa a fórmula dinâmica
-// da contagem de inserções (`_xlfn.MAP`/`_xlfn.LAMBDA`, ligada ao
-// xl/metadata.xml pelo atributo `cm`) pra fórmula matricial antiga — que não
-// conhece essas funções e devolve #NOME? em toda a coluna.
-//
-// Em vez disso, apagamos o valor em cache das células de fórmula: sem `<v>`
-// o Excel é obrigado a calcular aquela célula, pelo caminho normal, sem mudar
-// o modo de cálculo da pasta nem tocar na fórmula.
-export function stripCachedValues(sheetXml) {
-    return sheetXml.replace(/<c [^>]*>[\s\S]*?<\/c>/g, (cell) => (
-        cell.includes('<f') ? cell.replace(/<v>[\s\S]*?<\/v>/g, '') : cell
-    ));
-}
+// NÃO mexemos em célula de fórmula, de nenhuma forma. Duas tentativas de
+// "ajudar o Excel a recalcular" já quebraram o arquivo: marcar
+// `fullCalcOnLoad` no workbook e apagar o resultado em cache das fórmulas.
+// Nos dois casos a contagem de inserções (`_xlfn.MAP`/`_xlfn.LAMBDA`, ligada
+// ao xl/metadata.xml pelo atributo `cm`) foi rebaixada pra fórmula matricial
+// antiga e devolveu #NOME? na coluna inteira. A planilha sabe se calcular
+// sozinha; nosso trabalho é só entregar os dados de entrada.
 
-// Preenche APENAS a área do mapa, que é o que a planilha espera receber:
-// sigla, programa, ocorrência, desconto e as marcações dia a dia. Todo o
-// resto do formulário — contagem de inserções, VLR MÍDIA, Valor Tabela,
-// Total Mídia, cabeçalho de dias da semana — a própria planilha calcula ou
-// o usuário preenche. Escrever fora dessa área só cria chance de conflitar
-// com o que o arquivo já faz sozinho.
+// Preenche APENAS as células de entrada da grade (linhas 32-47): sigla,
+// programa, ocorrência, desconto, marcações dia a dia, duração e valor
+// unitário. Nada além disso é escrito — nem praça, nem mês, nem título, nem
+// TOTAL, nem Valor Tabela. A planilha calcula o resto a partir daqui.
 export function fillPiSheet(sheetXml, {
     descontoPercent, // 0-100
-    rows,            // [{ sigla, programa, dias, marks }]
+    duracaoLabel,    // ex. '30"'
+    rows,            // [{ sigla, programa, dias, marks, unit }]
 }) {
     let xml = sheetXml;
     const desconto = Number(descontoPercent) || 0;
@@ -126,6 +110,8 @@ export function fillPiSheet(sheetXml, {
             if (!mark) return;
             xml = setCellText(xml, `${colLetter(Number(day) + DAY_COL_OFFSET)}${r}`, mark);
         });
+        xml = setCellText(xml, `AY${r}`, duracaoLabel);
+        if (row.unit) xml = setCellNumber(xml, `AZ${r}`, row.unit);
     });
 
     return xml;

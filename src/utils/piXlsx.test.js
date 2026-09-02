@@ -5,7 +5,6 @@ import {
     escapeXml,
     setCellText,
     setCellNumber,
-    stripCachedValues,
     fillPiSheet,
 } from './piXlsx.js';
 
@@ -57,31 +56,20 @@ test('setCell* — não vaza pra célula vizinha de nome parecido', () => {
     assert.match(out, /<c r="A3" s="4" t="inlineStr">/);
 });
 
-test('stripCachedValues — apaga o resultado em cache mas preserva a fórmula', () => {
-    const xml = '<c r="AX32" s="120" cm="1"><f t="array" ref="AX32">SUM(_xlfn.MAP(H32:AL32))</f><v>0</v></c>';
-    const out = stripCachedValues(xml);
-    assert.match(out, /<f t="array" ref="AX32">SUM\(_xlfn\.MAP\(H32:AL32\)\)<\/f>/);
-    assert.doesNotMatch(out, /<v>/);
-    // atributos que ligam a fórmula dinâmica ao xl/metadata.xml continuam lá
-    assert.match(out, /<c r="AX32" s="120" cm="1">/);
-});
-
-test('stripCachedValues — não mexe em células de valor (sem fórmula)', () => {
-    const xml = '<c r="AZ32" s="108"><v>584</v></c>';
-    assert.equal(stripCachedValues(xml), xml);
-});
-
-test('fillPiSheet — escreve só a área do mapa: sigla, programa, ocorrência e marcas', () => {
+test('fillPiSheet — escreve só as células de entrada da grade', () => {
     const xml = [
         '<c r="A3" s="4"/>', '<c r="AH4" s="9"/>', '<c r="B16" s="60"/>',
         '<c r="A32" s="95"/>', '<c r="B32" s="96"/>', '<c r="C32" s="97"/>',
         '<c r="F32" s="98"/>', '<c r="AY32" s="107"/>', '<c r="AZ32" s="108"/>',
         '<c r="M32" s="100"/>',
+        '<c r="AX32" s="120" cm="1"><f t="array" ref="AX32">SUM(_xlfn.MAP(H32:AL32))</f><v>0</v></c>',
+        '<c r="BA32" s="119"><f>(AZ32*AX32)</f><v>0</v></c>',
     ].join('');
 
     const out = fillPiSheet(xml, {
         descontoPercent: 10,
-        rows: [{ sigla: 'AUTO', programa: 'AUTO ESPORTE', dias: 'Dom', marks: { 6: 'A' } }],
+        duracaoLabel: '30"',
+        rows: [{ sigla: 'AUTO', programa: 'AUTO ESPORTE', dias: 'Dom', unit: 584, marks: { 6: 'A' } }],
     });
 
     assert.match(out, /<c r="A32" s="95" t="inlineStr"><is><t xml:space="preserve">AUTO<\/t><\/is><\/c>/);
@@ -91,18 +79,24 @@ test('fillPiSheet — escreve só a área do mapa: sigla, programa, ocorrência 
     // dia 6 -> coluna M (6 + 7 = 13)
     assert.match(out, /<c r="M32" s="100" t="inlineStr"><is><t xml:space="preserve">A<\/t><\/is><\/c>/);
 
-    // fora da área do mapa nada é tocado — a planilha cuida do resto
+    assert.match(out, /<c r="AY32" s="107" t="inlineStr"><is><t xml:space="preserve">30&quot;<\/t><\/is><\/c>/);
+    assert.match(out, /<c r="AZ32" s="108"><v>584<\/v><\/c>/);
+
+    // fora da grade nada é tocado — a planilha cuida do resto
     assert.match(out, /<c r="A3" s="4"\/>/);
     assert.match(out, /<c r="AH4" s="9"\/>/);
     assert.match(out, /<c r="B16" s="60"\/>/);
-    assert.match(out, /<c r="AY32" s="107"\/>/);
-    assert.match(out, /<c r="AZ32" s="108"\/>/);
+
+    // e nenhuma célula de fórmula é alterada, nem seu valor em cache
+    assert.match(out, /<c r="AX32" s="120" cm="1"><f t="array" ref="AX32">SUM\(_xlfn\.MAP\(H32:AL32\)\)<\/f><v>0<\/v><\/c>/);
+    assert.match(out, /<c r="BA32" s="119"><f>\(AZ32\*AX32\)<\/f><v>0<\/v><\/c>/);
 });
 
 test('fillPiSheet — sem desconto, deixa a coluna DESC.% vazia', () => {
     const xml = '<c r="A32" s="95"/><c r="F32" s="98"/>';
     const out = fillPiSheet(xml, {
         descontoPercent: 0,
+        duracaoLabel: '30"',
         rows: [{ sigla: 'AUTO', programa: 'P', dias: 'Dom', marks: {} }],
     });
     assert.match(out, /<c r="F32" s="98"\/>/);
@@ -115,7 +109,7 @@ test('fillPiSheet — respeita o limite de 16 linhas do formulário', () => {
         sigla: `S${i}`, programa: 'P', dias: 'Dom', marks: {},
     }));
 
-    const out = fillPiSheet(cells.join(''), { descontoPercent: 0, rows });
+    const out = fillPiSheet(cells.join(''), { descontoPercent: 0, duracaoLabel: '30"', rows });
 
     assert.match(out, /<c r="A47" s="95" t="inlineStr">/); // 16ª linha preenchida
     assert.match(out, /<c r="A48" s="95"\/>/);             // a 17ª não invade a linha seguinte
