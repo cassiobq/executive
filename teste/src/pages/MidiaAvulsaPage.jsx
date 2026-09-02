@@ -240,23 +240,19 @@ export default function MidiaAvulsaPage({ onBack, active }) {
     const numVisibleCards = secondsCards.length;
     const useSinglePage = mapRows.length <= MAX_ROWS_SINGLE_PAGE;
 
-    // PI só faz sentido com uma duração/valor/desconto únicos pro documento
-    // inteiro — se houver mais de uma segundagem ativa ao mesmo tempo, o
-    // botão fica desabilitado em vez de tentar adivinhar qual usar (ver spec).
-    // Os totais (Valor Tabela, Desconto, Total Mídia) não são pré-computados
-    // aqui: são fórmulas já existentes na planilha real, recalculadas pelo
-    // Excel/Sheets quando o arquivo é aberto — só escrevemos os dados de
-    // entrada (sigla, marcas, valor unitário, desconto).
+    // A PI leva um desconto único pro documento inteiro — se houver mais de
+    // uma segundagem ativa ao mesmo tempo, o botão fica desabilitado em vez de
+    // tentar adivinhar qual usar (ver spec). Nada de total/subtotal é
+    // pré-computado aqui: contagem de inserções, Valor Tabela e Total Mídia
+    // são fórmulas da própria planilha. Só mandamos a área do mapa.
     const activeSegundos = secondsCards.length === 1 ? secondsCards[0].segundos : null;
     const canExportPI = activeSegundos !== null;
-    const piDuracaoLabel = activeSegundos ? `${activeSegundos}"` : '';
     const piDescontoPercent = activeSegundos ? (activeSeconds[activeSegundos]?.discount || 0) : 0;
     const piRows = enrichedRows.map(r => ({
         sigla: r.sigla,
         programa: r.programa,
         dias: r.dias,
         marks: r.marks,
-        unit: activeSegundos ? r[`unitValor${activeSegundos}`] : 0,
     }));
 
     // --- Handlers ---
@@ -464,17 +460,12 @@ export default function MidiaAvulsaPage({ onBack, active }) {
 
             const zip = await JSZip.loadAsync(templateBuffer);
             const sheetXml = await zip.file(piXlsx.PI_SHEET_PATH).async('string');
-            zip.file(piXlsx.PI_SHEET_PATH, piXlsx.fillPiSheet(sheetXml, {
-                pracaLabel,
-                mesVeiculacao: new Date(mapYear, mapMonthIndex, 1),
-                titulosUsados,
-                duracaoLabel: piDuracaoLabel,
+            const filled = piXlsx.fillPiSheet(sheetXml, {
                 descontoPercent: piDescontoPercent,
                 rows: piRows,
-            }));
-
-            const workbookXml = await zip.file(piXlsx.PI_WORKBOOK_PATH).async('string');
-            zip.file(piXlsx.PI_WORKBOOK_PATH, piXlsx.forceFullRecalc(workbookXml));
+            });
+            zip.file(piXlsx.PI_SHEET_PATH, piXlsx.stripCachedValues(filled));
+            zip.remove(piXlsx.PI_CALCCHAIN_PATH);
 
             const fileName = `PI-${selectedPraca}-${MONTH_ABBR[mapMonthIndex]}${mapYear}.xlsx`;
             const xlsxBlob = await zip.generateAsync({

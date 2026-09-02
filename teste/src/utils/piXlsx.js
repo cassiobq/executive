@@ -16,12 +16,10 @@
 // rId1 -> worksheets/sheet1.xml. O template é um asset fixo nosso, versionado
 // junto do código, então esse caminho não muda sem a gente saber.
 export const PI_SHEET_PATH = 'xl/worksheets/sheet1.xml';
-export const PI_WORKBOOK_PATH = 'xl/workbook.xml';
+// O Excel reconstrói a cadeia de cálculo sozinho quando ela não existe;
+// removê-la evita que ele reaproveite dependências velhas do modelo vazio.
+export const PI_CALCCHAIN_PATH = 'xl/calcChain.xml';
 
-// Linha da tabela de títulos pra cada letra (A=16 ... F=21). G=22 existe no
-// formulário mas nunca é usado por nós — LETRAS_TITULO (utils/titulos.js)
-// para em F.
-export const TITULO_ROW = { A: 16, B: 17, C: 18, D: 19, E: 20, F: 21 };
 // Primeira linha de programa na grade de dias; as seguintes são 33, 34...
 export const PROGRAMA_FIRST_ROW = 32;
 // Última linha de programa que o formulário comporta.
@@ -47,15 +45,6 @@ export function escapeXml(value) {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
-}
-
-// Serial de data do Excel: dias desde 1899-12-30 (a referência que já embute
-// o bug histórico do ano 1900). Usa UTC dos dois lados pra não escorregar um
-// dia por causa de fuso/horário de verão.
-export function dateToExcelSerial(date) {
-    const utc = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
-    const epoch = Date.UTC(1899, 11, 30);
-    return Math.round((utc - epoch) / 86400000);
 }
 
 // Casa uma célula que já existe no XML, tanto na forma vazia (`<c r="H32"
@@ -92,47 +81,38 @@ export function setCellNumber(xml, ref, value) {
     return writeCell(xml, ref, `<v>${Number(value)}</v>`);
 }
 
-export function setCellDate(xml, ref, date) {
-    return setCellNumber(xml, ref, dateToExcelSerial(date));
-}
-
 // As células que preenchemos são entradas de fórmulas que já existem na
-// planilha (contagem de inserções, Valor Tabela, Total Mídia...), mas os
-// valores em cache no arquivo continuam sendo os do modelo vazio (zero). Sem
-// isso o Excel abre e mostra os zeros antigos em vez de recalcular — foi
-// exatamente o que aconteceu na primeira versão desta exportação.
-export function forceFullRecalc(workbookXml) {
-    if (/<calcPr[^>]*\bfullCalcOnLoad="1"/.test(workbookXml)) return workbookXml;
-    if (/<calcPr[^>]*\/>/.test(workbookXml)) {
-        return workbookXml.replace(/<calcPr([^>]*)\/>/, '<calcPr$1 fullCalcOnLoad="1"/>');
-    }
-    return workbookXml.replace('</workbook>', '<calcPr fullCalcOnLoad="1"/></workbook>');
+// planilha (contagem de inserções, Valor Tabela, Total Mídia...), mas o
+// arquivo carrega o resultado em cache do modelo vazio — zero. Sem fazer
+// nada, o Excel confia no cache e abre tudo zerado.
+//
+// A saída NÃO é marcar `fullCalcOnLoad` no workbook: isso força o Excel a
+// reprocessar a pasta inteira e, na prática, ele rebaixa a fórmula dinâmica
+// da contagem de inserções (`_xlfn.MAP`/`_xlfn.LAMBDA`, ligada ao
+// xl/metadata.xml pelo atributo `cm`) pra fórmula matricial antiga — que não
+// conhece essas funções e devolve #NOME? em toda a coluna.
+//
+// Em vez disso, apagamos o valor em cache das células de fórmula: sem `<v>`
+// o Excel é obrigado a calcular aquela célula, pelo caminho normal, sem mudar
+// o modo de cálculo da pasta nem tocar na fórmula.
+export function stripCachedValues(sheetXml) {
+    return sheetXml.replace(/<c [^>]*>[\s\S]*?<\/c>/g, (cell) => (
+        cell.includes('<f') ? cell.replace(/<v>[\s\S]*?<\/v>/g, '') : cell
+    ));
 }
 
-// Aplica os dados da Mídia Avulsa no XML da aba "Patrocínios_".
-// Só escreve entrada: nada de total/subtotal, porque Valor Tabela, Total
-// Mídia, Bruto e a contagem de inserções são fórmulas do próprio arquivo.
+// Preenche APENAS a área do mapa, que é o que a planilha espera receber:
+// sigla, programa, ocorrência, desconto e as marcações dia a dia. Todo o
+// resto do formulário — contagem de inserções, VLR MÍDIA, Valor Tabela,
+// Total Mídia, cabeçalho de dias da semana — a própria planilha calcula ou
+// o usuário preenche. Escrever fora dessa área só cria chance de conflitar
+// com o que o arquivo já faz sozinho.
 export function fillPiSheet(sheetXml, {
-    pracaLabel,
-    mesVeiculacao,   // Date — primeiro dia do mês selecionado
-    titulosUsados,   // [{ letra, nome }]
-    duracaoLabel,    // ex. '30"'
     descontoPercent, // 0-100
-    rows,            // [{ sigla, programa, dias, marks, unit }]
+    rows,            // [{ sigla, programa, dias, marks }]
 }) {
     let xml = sheetXml;
-    const descontoFraction = (Number(descontoPercent) || 0) / 100;
-
-    xml = setCellText(xml, 'A3', pracaLabel);
-    if (mesVeiculacao) xml = setCellDate(xml, 'AH4', mesVeiculacao);
-    xml = setCellNumber(xml, 'BA50', descontoFraction);
-
-    titulosUsados.forEach(t => {
-        const row = TITULO_ROW[t.letra];
-        if (!row) return;
-        xml = setCellText(xml, `B${row}`, t.nome);
-        xml = setCellText(xml, `O${row}`, duracaoLabel);
-    });
+    const desconto = Number(descontoPercent) || 0;
 
     rows.forEach((row, i) => {
         const r = PROGRAMA_FIRST_ROW + i;
@@ -140,9 +120,8 @@ export function fillPiSheet(sheetXml, {
         xml = setCellText(xml, `A${r}`, row.sigla);
         xml = setCellText(xml, `B${r}`, row.programa);
         xml = setCellText(xml, `C${r}`, row.dias);
-        xml = setCellNumber(xml, `F${r}`, descontoFraction);
-        xml = setCellText(xml, `AY${r}`, duracaoLabel);
-        xml = setCellNumber(xml, `AZ${r}`, row.unit);
+        // Sem desconto, deixa a célula vazia em vez de escrever 0%.
+        if (desconto > 0) xml = setCellNumber(xml, `F${r}`, desconto / 100);
         Object.entries(row.marks || {}).forEach(([day, mark]) => {
             if (!mark) return;
             xml = setCellText(xml, `${colLetter(Number(day) + DAY_COL_OFFSET)}${r}`, mark);
