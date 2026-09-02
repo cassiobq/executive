@@ -40,16 +40,6 @@ const MONTH_NAMES = [
 
 const MONTH_ABBR = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
-// Linha da tabela de títulos (aba "Patrocínios_") pra cada letra, no
-// Modelo_de_PI_Limpo.xlsx real — A=16 até F=21 (G=22 nunca é usado por
-// nós, LETRAS_TITULO em utils/titulos.js para em F).
-const TITULO_ROW = { A: 16, B: 17, C: 18, D: 19, E: 20, F: 21 };
-// Primeira linha de programa na grade de dias da mesma aba; cada linha
-// seguinte é uma unidade abaixo (32, 33, 34...).
-const PROGRAMA_FIRST_ROW = 32;
-// Coluna H (8ª) = dia 1 do mês na grade; dia 31 cai na coluna AL (38ª).
-const DAY_COL_OFFSET = 7;
-
 const getNextMonths = () => {
     const currentMonthIdx = new Date().getMonth();
     return Array.from({ length: 4 }).map((_, i) => {
@@ -452,9 +442,10 @@ export default function MidiaAvulsaPage({ onBack, active }) {
 
     // Gera a PI preenchendo o arquivo real (Modelo_de_PI_Limpo.xlsx, servido
     // como asset estático) em vez de recriar o layout — só assim a fidelidade
-    // visual é garantida (fonte, cores, bordas, logo, tudo já vem do arquivo
-    // original; só escrevemos valor nas células de entrada, nunca mexemos em
-    // estilo). O usuário abre no Excel/Sheets e salva/imprime como PDF de lá.
+    // visual é garantida. Escrevemos direto no XML de dentro do .xlsx
+    // (utils/piXlsx.js explica por que não passamos por uma biblioteca de
+    // planilha): todo byte que não é uma célula de entrada continua igual ao
+    // original. O usuário abre no Excel/Sheets e salva/imprime como PDF de lá.
     // Ver docs/superpowers/specs/2026-08-25-exportar-pi-pdf.md.
     const handleExportPI = async () => {
         if (!canExportPI) {
@@ -464,44 +455,33 @@ export default function MidiaAvulsaPage({ onBack, active }) {
         setIsFlashing(true);
         setTimeout(() => setIsFlashing(false), 400);
         try {
-            const ExcelJS = await import('exceljs');
+            const [{ default: JSZip }, piXlsx] = await Promise.all([
+                import('jszip'),
+                import('../utils/piXlsx'),
+            ]);
             const templateUrl = `${import.meta.env.BASE_URL}pi-template.xlsx`;
             const templateBuffer = await fetch(templateUrl).then(r => r.arrayBuffer());
 
-            const workbook = new ExcelJS.Workbook();
-            await workbook.xlsx.load(templateBuffer);
-            const ws = workbook.getWorksheet('Patrocínios_');
+            const zip = await JSZip.loadAsync(templateBuffer);
+            const sheetXml = await zip.file(piXlsx.PI_SHEET_PATH).async('string');
+            zip.file(piXlsx.PI_SHEET_PATH, piXlsx.fillPiSheet(sheetXml, {
+                pracaLabel,
+                mesVeiculacao: new Date(mapYear, mapMonthIndex, 1),
+                titulosUsados,
+                duracaoLabel: piDuracaoLabel,
+                descontoPercent: piDescontoPercent,
+                rows: piRows,
+            }));
 
-            ws.getCell('A3').value = pracaLabel;
-            ws.getCell('AH4').value = new Date(mapYear, mapMonthIndex, 1);
-            ws.getCell('BA4').value = new Date(); // substitui a fórmula =NOW() por um valor fixo (documento gerado, não mais "ao vivo")
+            const workbookXml = await zip.file(piXlsx.PI_WORKBOOK_PATH).async('string');
+            zip.file(piXlsx.PI_WORKBOOK_PATH, piXlsx.forceFullRecalc(workbookXml));
 
-            titulosUsados.forEach(t => {
-                const row = TITULO_ROW[t.letra];
-                if (!row) return; // só A-F existem na planilha real usada por nós
-                ws.getCell(`B${row}`).value = t.nome;
-                ws.getCell(`O${row}`).value = piDuracaoLabel;
-            });
-
-            piRows.forEach((row, i) => {
-                const r = PROGRAMA_FIRST_ROW + i;
-                ws.getCell(`A${r}`).value = row.sigla;
-                ws.getCell(`B${r}`).value = row.programa;
-                ws.getCell(`C${r}`).value = row.dias;
-                ws.getCell(`F${r}`).value = piDescontoPercent / 100;
-                ws.getCell(`AY${r}`).value = piDuracaoLabel;
-                ws.getCell(`AZ${r}`).value = row.unit;
-                Object.entries(row.marks).forEach(([day, mark]) => {
-                    if (!mark) return;
-                    ws.getCell(r, Number(day) + DAY_COL_OFFSET).value = mark;
-                });
-            });
-
-            ws.getCell('BA50').value = piDescontoPercent / 100;
-
-            const outBuffer = await workbook.xlsx.writeBuffer();
             const fileName = `PI-${selectedPraca}-${MONTH_ABBR[mapMonthIndex]}${mapYear}.xlsx`;
-            const xlsxBlob = new Blob([outBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const xlsxBlob = await zip.generateAsync({
+                type: 'blob',
+                mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                compression: 'DEFLATE',
+            });
             const xlsxFile = new File([xlsxBlob], fileName, { type: xlsxBlob.type });
             if (navigator.canShare?.({ files: [xlsxFile] })) {
                 try {
