@@ -22,6 +22,9 @@ Um vendedor escolhe programa, praça e secundagem, configura 1 a 3 cards de pre�
 |---|---|
 | `src/App.jsx` | Estado global, cálculos, layout principal, sidebar, floating buttons |
 | `src/components/CardPreview.jsx` | Renderização do card 9:16, escalamento de fonte, observações |
+| `src/pages/MidiaAvulsaPage.jsx` | Mídia Avulsa: formatos Card e Slide, mapa de inserções, exportar PDF e PI |
+| `src/utils/piXlsx.js` | Preenche a PI escrevendo direto no XML de dentro do `.xlsx` |
+| `public/pi-template.xlsx` | Modelo de PI em branco, servido como asset estático |
 | `src/services/sheetsService.js` | Fetch das 2 abas do Google Sheets, parse de datas/horas |
 | `src/index.css` | Design tokens, sidebar, liquid glass, tray, preview scaling |
 | `index.html` | PWA meta tags, manifest, apple-touch-icon |
@@ -77,12 +80,18 @@ git push origin main
 # URL: https://cassiobq.github.io/executive/
 ```
 
-## Subprojeto `teste/` — app independente no mesmo repo
+## Subprojeto `teste/` — staging area no mesmo repo
 
 A pasta `teste/` é um **segundo app**, publicado junto pelo mesmo deploy
-em `/executive/teste/` (ver `.github/workflows/deploy.yml`). Foi ali,
-não aqui, que o formato **Mídia Avulsa → Slide** (mapa de inserções,
-editor mobile por semana, sistema de títulos de campanha, popup de
-exportação com compartilhamento nativo) foi construído. Este app raiz
-ainda só tem o formato Card na Mídia Avulsa. Ver `teste/AGENTS.md` para
-o contexto completo desse subprojeto antes de mexer nele.
+em `/executive/teste/` (ver `.github/workflows/deploy.yml`). É onde as
+features novas são construídas e testadas antes de virem pra cá: o
+formato **Mídia Avulsa → Slide** (mapa de inserções, editor mobile por
+semana, títulos de campanha, popup de exportação, exportar para PI)
+nasceu ali e depois foi promovido pro `src/` da raiz.
+
+Hoje os dois apps têm o mesmo conteúdo em `src/` — a raiz é a versão de
+produção (`/executive/`), `teste/` continua sendo a área de
+experimentação. Ao mexer numa feature que existe nos dois, **decida
+conscientemente se a mudança vai só no `teste/` ou nos dois**; eles não
+se sincronizam sozinhos. Ver `teste/AGENTS.md` para o contexto completo
+do formato Slide.

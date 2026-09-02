@@ -1,17 +1,19 @@
 # AGENTS.md — Contexto para IAs (`teste/`)
 
 Este é um app **independente** dentro do mesmo repositório do `executive`
-(app raiz). Mesmo código-base original (fork do app raiz), mas evoluído
-separadamente — é aqui que a funcionalidade **Mídia Avulsa → Slide**
-(mapa de inserções com editor mobile) foi construída e é onde ela
-continua sendo desenvolvida.
+(app raiz). Mesmo código-base original (fork do app raiz), e é aqui que a
+funcionalidade **Mídia Avulsa → Slide** (mapa de inserções com editor
+mobile, títulos, exportar PDF e PI) foi construída.
 
-- **App raiz** (`/executive/`, pasta `src/` na raiz do repo): versão mais
-  simples, sem o formato Slide funcional (Mídia Avulsa lá só tem o
-  formato Card).
-- **Este app** (`/executive/teste/`, pasta `teste/`): tem o formato Slide
-  completo — mapa de inserções, editor semanal mobile, sistema de
-  títulos de campanha, popup de exportação com compartilhamento nativo.
+- **Este app** (`/executive/teste/`, pasta `teste/`): a área de
+  experimentação — features novas entram por aqui.
+- **App raiz** (`/executive/`, pasta `src/` na raiz do repo): a versão de
+  produção. Desde o commit `5f2e313` o `src/` da raiz recebeu todo o
+  conteúdo do `teste/src/`, então hoje os dois têm as mesmas telas.
+
+Eles **não se sincronizam sozinhos**: ao mexer numa feature que existe
+nos dois, decida conscientemente se a mudança vai só aqui ou nos dois
+lugares (as últimas foram aplicadas nos dois).
 
 Os dois são publicados juntos pelo mesmo workflow
 (`.github/workflows/deploy.yml`, na raiz do repo): builda `src/` → `site/`
@@ -53,9 +55,16 @@ em todo o app (não há detecção de viewport em JS, exceto um
   para: (a) renderização desktop normal, e (b) o conteúdo que vira a
   imagem/PDF exportado em qualquer tamanho de tela (via `page1Ref`).
 - **`src/components/MapaInsercoesSemanal.jsx`** — editor **mobile**, uma
-  semana por vez (troca por swipe/botões), tocar numa célula
-  preenche/edita. É o que aparece na tela em telas pequenas/paisagem;
-  nunca é o que vira a exportação.
+  semana por vez, tocar numa célula preenche/edita. É o que aparece na
+  tela em telas pequenas/paisagem; nunca é o que vira a exportação.
+  A troca de semana é um **carrossel horizontal em CSS scroll-snap**
+  (`scroll-snap-type: x mandatory` no trilho, `scroll-snap-align: start`
+  em cada painel): todas as semanas são renderizadas lado a lado e o
+  usuário rola com o dedo. O JS só observa (`handleWeeksScroll`, com
+  debounce de 120ms → `computeActiveWeekIndex` em `utils/weekWindows.js`)
+  pra saber qual semana está ativa, e comanda (`goToWeek`, `scrollTo`
+  suave) quando as setas são usadas. Nada de arrastar em JS — quem
+  anima é o navegador.
 
 ### Sistema de "títulos" de campanha
 
@@ -94,6 +103,44 @@ O botão flutuante de exportar (`.mobile-copy-btn`, fora do popup) usa
 desktop → baixa o PDF direto (é o único lugar do app com detecção de
 viewport em JS — todo o resto do split desktop/mobile é CSS puro).
 
+### Exportar para PI (Pedido de Inserção)
+
+Além do "Exportar PDF", o formato Slide tem **"Exportar para PI"**: pega
+o mapa montado e devolve o `.xlsx` real da emissora já preenchido
+(`handleExportPI` em `MidiaAvulsaPage.jsx`).
+
+O template em branco vive em `public/pi-template.xlsx` (byte a byte igual
+ao arquivo que o usuário enviou) e é servido como asset estático. Um
+`.xlsx` é um ZIP de XMLs: abrimos com `jszip` (import dinâmico),
+trocamos o conteúdo de células que já existem em
+`xl/worksheets/sheet1.xml` (`src/utils/piXlsx.js`) e re-empacotamos.
+Nenhuma biblioteca de planilha faz round-trip — exceljs foi tentado e
+descartado por perder partes do arquivo.
+
+**A regra que não se quebra** (definida pelo usuário, é o contrato desta
+feature): o app escreve **apenas** as células de entrada da grade, linhas
+32–47 — sigla (`A`), programa (`B`), ocorrência (`C`), desconto (`F`),
+marcas dia a dia (`H`..`AL`, dia 1 = coluna H), duração (`AY`) e valor
+unitário (`AZ`). Nada fora disso: nem praça, nem mês, nem título, nem
+totais. E **nenhuma fórmula é tocada de forma alguma** — nem apagando o
+`<v>` em cache, nem marcando `fullCalcOnLoad` no `workbook.xml`. As duas
+tentativas de "ajudar o Excel a recalcular" rebaixaram a fórmula dinâmica
+de contagem de inserções (`_xlfn.MAP`/`_xlfn.LAMBDA`) pra matricial
+antiga e produziram `#NOME?` na coluna inteira. A planilha calcula o
+resto sozinha.
+
+Detalhe conhecido, **do modelo e não do nosso código**: essa fórmula de
+contagem só avalia no **Excel Web**; no Excel desktop do usuário ela
+aparece como `{=SOMA(_xlfn.MAP(...))}` e dá `#NOME?` — inclusive no
+arquivo original, sem passar pela exportação.
+
+O botão fica **bloqueado** com mais de uma segundagem ativa (é ela que
+define duração/valor do documento inteiro); usa a classe `is-blocked` em
+vez do atributo `disabled`, porque `disabled` engoliria o toque e o
+`alert` explicativo nunca apareceria. Ver
+`../docs/superpowers/specs/2026-08-25-exportar-pi.md` para o mapeamento
+completo e o histórico das abordagens descartadas.
+
 ## Utils com testes (`node --test`)
 
 - `src/utils/weekWindows.js` — calcula as "semanas" do mês para o
@@ -101,6 +148,9 @@ viewport em JS — todo o resto do split desktop/mobile é CSS puro).
 - `src/utils/weekLock.js` — `getAllowedWeekdays`, `markQuantity`,
   `normalizeMark` (parsing/validação do formato de marca).
 - `src/utils/titulos.js` — ver acima.
+- `src/utils/piXlsx.js` — escrita cirúrgica no XML da PI (ver acima). O
+  teste `piXlsx.test.js` é o que guarda o contrato: afirma que as células
+  de fórmula vizinhas saem byte a byte iguais.
 
 Rodar: `npm test` (usa `node --test src/**/*.test.js` — **não** use
 `node --test src` sozinho, falha com MODULE_NOT_FOUND nesse projeto).
@@ -118,6 +168,10 @@ Este subprojeto foi desenvolvido usando os skills do plugin
 - `docs/superpowers/specs/2026-08-13-titulos-toque-rapido-popup-export.md` +
   `docs/superpowers/plans/2026-08-13-titulos-toque-rapido-popup-export.md`
   — sistema de títulos, toque rápido, popup de exportação.
+- `docs/superpowers/specs/2026-08-25-exportar-pi.md` — exportar para PI
+  (sem plano formal: a feature foi convergindo a partir do feedback do
+  usuário, e o spec foi reescrito no fim pra registrar o que ficou de
+  pé).
 
 Ambos os planos foram totalmente implementados, revisados (por tarefa +
 revisão final de todo o branch) e mergeados na `main` (PRs #1 e #2).
