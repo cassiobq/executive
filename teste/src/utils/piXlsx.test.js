@@ -8,6 +8,7 @@ import {
     fillPiSheet,
     forceFullCalc,
     dateToExcelSerial,
+    formatNomePrograma,
     MES_VEICULACAO_CELL,
     DESCONTO_GLOBAL_CELL,
     CLIENTE_CELLS,
@@ -78,7 +79,8 @@ test('fillPiSheet — escreve só as células de entrada da grade', () => {
     });
 
     assert.match(out, /<c r="A32" s="95" t="inlineStr"><is><t xml:space="preserve">AUTO<\/t><\/is><\/c>/);
-    assert.match(out, /<c r="B32" s="96" t="inlineStr"><is><t xml:space="preserve">AUTO ESPORTE<\/t><\/is><\/c>/);
+    // programa vai em título (não caixa alta, ver formatNomePrograma), dia único não expande
+    assert.match(out, /<c r="B32" s="96" t="inlineStr"><is><t xml:space="preserve">Auto Esporte<\/t><\/is><\/c>/);
     assert.match(out, /<c r="C32" s="97" t="inlineStr"><is><t xml:space="preserve">Dom<\/t><\/is><\/c>/);
     assert.match(out, /<c r="F32" s="98"><v>0\.1<\/v><\/c>/);
     // dia 6 -> coluna M (6 + 7 = 13)
@@ -237,4 +239,48 @@ test('fillPiSheet — não vaza pras células de fórmula vizinhas do bloco de t
     assert.match(out, /<c r="BA48" s="144"><f>SUM\(BA32:BA47\)<\/f><v>0<\/v><\/c>/);
     assert.match(out, /<c r="BA51" s="50"><f>\(BA48-\(BA48\*BA50\)\)<\/f><v>0<\/v><\/c>/);
     assert.match(out, /<c r="BA4" s="70"><f ca="1">NOW\(\)<\/f><v>46204\.716807638892<\/v><\/c>/);
+});
+
+test('formatNomePrograma — caixa alta vira título, preposições ficam minúsculas', () => {
+    assert.equal(formatNomePrograma('BOM DIA GOIÁS'), 'Bom Dia Goiás');
+    assert.equal(formatNomePrograma('SESSÃO DA TARDE'), 'Sessão da Tarde');
+    assert.equal(formatNomePrograma('VALE A PENA VER DE NOVO'), 'Vale a Pena Ver de Novo');
+    assert.equal(formatNomePrograma('DOMINGÃO COM HUCK'), 'Domingão com Huck');
+});
+
+test('formatNomePrograma — primeira palavra sempre maiúscula, mesmo sendo preposição', () => {
+    assert.equal(formatNomePrograma('NO BALAIO'), 'No Balaio');
+});
+
+test('formatNomePrograma — sigla conhecida (TV) fica em caixa alta', () => {
+    assert.equal(formatNomePrograma('PRAÇA TV 1a EDIÇÃO'), 'Praça TV 1a Edição');
+    assert.equal(formatNomePrograma('CINE BBB'), 'Cine BBB');
+});
+
+test('formatNomePrograma — numeral romano isolado fica em caixa alta ("NOVELA II"/"III")', () => {
+    assert.equal(formatNomePrograma('NOVELA I (SEG/SEX)'), 'Novela I (Seg/Sex)');
+    assert.equal(formatNomePrograma('NOVELA II (SEG/SEX)'), 'Novela II (Seg/Sex)');
+    assert.equal(formatNomePrograma('NOVELA III FINAL'), 'Novela III Final');
+});
+
+test('formatNomePrograma — não mexe em dígito nem no que não é letra', () => {
+    assert.equal(formatNomePrograma('MINISSÉRIE 1'), 'Minissérie 1');
+    assert.equal(formatNomePrograma('ENCONTRO/BEM ESTAR'), 'Encontro/Bem Estar');
+    assert.equal(formatNomePrograma('NOVELA DA TARDE - EDIÇÃO ESPECIAL'), 'Novela da Tarde - Edição Especial');
+});
+
+test('formatNomePrograma — vazio/undefined passa direto', () => {
+    assert.equal(formatNomePrograma(''), '');
+    assert.equal(formatNomePrograma(undefined), undefined);
+});
+
+test('fillPiSheet — OCORRÊNCIA expande o intervalo de dias, PROGRAMA sai em título', () => {
+    const xml = '<c r="A32" s="95"/><c r="B32" s="96"/><c r="C32" s="97"/>';
+    const out = fillPiSheet(xml, {
+        descontoPercent: 0,
+        duracaoLabel: '30"',
+        rows: [{ sigla: 'BPRA', programa: 'BOM DIA GOIÁS', dias: 'Seg/Sex', marks: {} }],
+    });
+    assert.match(out, /<c r="B32" s="96" t="inlineStr"><is><t xml:space="preserve">Bom Dia Goiás<\/t><\/is><\/c>/);
+    assert.match(out, /<c r="C32" s="97" t="inlineStr"><is><t xml:space="preserve">Seg\/Ter\/Qua\/Qui\/Sex<\/t><\/is><\/c>/);
 });

@@ -20,6 +20,17 @@ export function getAllowedWeekdays(diasField) {
     return allowed;
 }
 
+// Expande a notação curta do campo "dias" ("Seg/Sex", "Seg/Sáb", "Sáb") pra
+// a lista completa de dias que ela representa ("Seg/Ter/Qua/Qui/Sex"), na
+// ordem da semana comercial. Usado onde a abreviação de intervalo confunde
+// quem lê o documento fora do app (ex.: OCORRÊNCIA na PI exportada) — o
+// resto do app continua mostrando a notação curta.
+export function expandDiasField(diasField) {
+    const allowed = getAllowedWeekdays(diasField);
+    if (!allowed) return diasField || '';
+    return WEEK_ORDER.filter(dia => allowed.has(ABBR_TO_DOW[dia])).join('/');
+}
+
 // Extrai a quantidade de uma marca tipo "A"/"2B"/"10C" (prefixo numérico, padrão 1).
 export function markQuantity(mark) {
     if (!mark) return 0;

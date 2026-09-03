@@ -162,8 +162,8 @@ desproporcional.
 | Célula | Conteúdo | Fonte no app |
 |---|---|---|
 | `A32`–`A47` | SIGLA | `piRows[].sigla` |
-| `B32`–`B47` | PROGRAMA | `piRows[].programa` |
-| `C32`–`C47` | OCORRÊNCIA | `piRows[].dias` |
+| `B32`–`B47` | PROGRAMA | `piRows[].programa`, em título — ver `formatNomePrograma` |
+| `C32`–`C47` | OCORRÊNCIA | `piRows[].dias`, expandido — ver `expandDiasField` |
 | `F32`–`F47` | DESC.% por linha (fração) | `descontoPercent / 100` — só se > 0 |
 | `H..AL` (linhas 32–47) | Marcas dia a dia | `row.marks[dia]` — dia 1 = coluna H (`DAY_COL_OFFSET = 7`) |
 | `AY32`–`AY47` | Duração | segundagem ativa, ex. `30"` |
@@ -194,6 +194,30 @@ estilo (`<c r="A32" s="95"/>`) — sem fórmula e sem atributo `cm` — com
 uma única exceção: `O16` já vem com o valor `30` no template (um
 default do próprio modelo pro título A). O app sobrescreve normalmente
 quando título A está em uso, e limpa a célula quando não está.
+
+### Nome do programa e ocorrência: formatados só na hora de escrever
+
+Os dois vêm da fonte em formato compacto — `programas.json` guarda o
+nome em caixa alta (é assim que o resto do app mostra: cards, sidebar) e
+o campo `dias` usa notação de intervalo (`"Seg/Sex"` = segunda a
+sexta). A PI real espera nome em título e todos os dias por extenso; a
+conversão acontece só dentro de `fillPiSheet`, no momento de escrever —
+`piRows` continua carregando os valores originais, então nada muda pro
+resto do app.
+
+- **`formatNomePrograma`** (`piXlsx.js`) — título com preposições/artigos
+  curtos em minúsculo (exceto na primeira palavra), preservando siglas
+  conhecidas (`TV`, `BBB`) e numerais romanos isolados (`NOVELA II`,
+  `NOVELA III`) em caixa alta. Não mexe em nada que não seja letra —
+  dígitos, barra, hífen e parênteses passam direto, então o "1a" de
+  "PRAÇA TV 1a EDIÇÃO" não vira "1A" nem "1ª" (não tentamos corrigir a
+  notação de ordinal do dado original, só o texto ao redor). Testado
+  contra os 81 nomes reais de `programas.json`.
+- **`expandDiasField`** (`weekLock.js`) — reaproveita `getAllowedWeekdays`
+  (já usado pra travar dias fora do padrão no mapa) e devolve a lista
+  completa na ordem da semana comercial: `"Seg/Sex"` → `"Seg/Ter/Qua/
+  Qui/Sex"`. Um único dia (`"Sáb"`) ou campo sem restrição (`"-"`) passam
+  sem alteração.
 
 ## Implementação
 

@@ -11,6 +11,8 @@
 // conteúdo de células que já existem no template: todo o resto do arquivo
 // (estilos, logo, formas, impressão, fórmulas) continua byte a byte igual.
 
+import { expandDiasField } from './weekLock.js';
+
 // Caminhos dentro do .xlsx. Confirmados no workbook.xml do
 // Modelo_de_PI_Limpo.xlsx: a aba "Patrocínios_" (sheetId 76) aponta pra
 // rId1 -> worksheets/sheet1.xml. O template é um asset fixo nosso, versionado
@@ -73,6 +75,41 @@ export function dateToExcelSerial(date) {
     const utcMs = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
     const epochMs = Date.UTC(1899, 11, 30);
     return Math.round((utcMs - epochMs) / 86400000);
+}
+
+// programas.json guarda os nomes em caixa alta (é assim que o resto do app
+// mostra — cards, sidebar); a PI real usa título normal. Só essa conversão
+// acontece aqui, não no dado em si.
+//
+// Regex sobre corridas de letras (`[A-Za-zÀ-ÖØ-öø-ÿ]+`) — números, barras,
+// hífens, parênteses e espaços passam direto, sem tocar em coisas como o
+// "1a" de "PRAÇA TV 1a EDIÇÃO". Três exceções por corrida de letras:
+// - siglas conhecidas (TV, BBB) ficam em caixa alta;
+// - numeral romano isolado (I, II, III, IV — usado como "NOVELA II") fica
+//   em caixa alta;
+// - preposição/artigo curto (de, da, e, a, com...) fica minúsculo, exceto
+//   como primeira palavra do nome.
+const ROMAN_NUMERAL_RE = /^[IVXLCDM]+$/;
+const ACRONIMOS_PROGRAMA = new Set(['TV', 'BBB']);
+const PREPOSICOES_MINUSCULAS = new Set([
+    'de', 'da', 'do', 'das', 'dos', 'e', 'a', 'o', 'as', 'os',
+    'em', 'no', 'na', 'nos', 'nas', 'ao', 'aos', 'à', 'às',
+    'com', 'para', 'por', 'sem', 'sob', 'sobre',
+]);
+
+export function formatNomePrograma(programa) {
+    if (!programa) return programa;
+    let first = true;
+    return programa.replace(/[A-Za-zÀ-ÖØ-öø-ÿ]+/g, (word) => {
+        const isFirst = first;
+        first = false;
+        const upper = word.toUpperCase();
+        if (ACRONIMOS_PROGRAMA.has(upper)) return upper;
+        if (word === upper && word.length <= 4 && ROMAN_NUMERAL_RE.test(upper)) return upper;
+        const lower = word.toLowerCase();
+        if (!isFirst && PREPOSICOES_MINUSCULAS.has(lower)) return lower;
+        return lower.charAt(0).toUpperCase() + lower.slice(1);
+    });
 }
 
 export function escapeXml(value) {
@@ -192,8 +229,8 @@ export function fillPiSheet(sheetXml, {
         const r = PROGRAMA_FIRST_ROW + i;
         if (r > PROGRAMA_LAST_ROW) return; // o formulário só tem 16 linhas
         xml = setCellText(xml, `A${r}`, row.sigla);
-        xml = setCellText(xml, `B${r}`, row.programa);
-        xml = setCellText(xml, `C${r}`, row.dias);
+        xml = setCellText(xml, `B${r}`, formatNomePrograma(row.programa));
+        xml = setCellText(xml, `C${r}`, expandDiasField(row.dias));
         // Sem desconto, deixa a célula vazia em vez de escrever 0%.
         if (desconto > 0) xml = setCellNumber(xml, `F${r}`, desconto / 100);
         Object.entries(row.marks || {}).forEach(([day, mark]) => {
