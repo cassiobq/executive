@@ -160,9 +160,26 @@ Excel Web avalia normal.
 O botão fica **bloqueado** com mais de uma segundagem ativa (é ela que
 define duração/valor do documento inteiro); usa a classe `is-blocked` em
 vez do atributo `disabled`, porque `disabled` engoliria o toque e o
-`alert` explicativo nunca apareceria. Ver
-`../docs/superpowers/specs/2026-08-25-exportar-pi.md` para o mapeamento
-completo e o histórico das abordagens descartadas.
+`alert` explicativo nunca apareceria.
+
+**Programa e ocorrência são formatados só na hora de escrever.**
+`programas.json` guarda o nome em caixa alta (é assim que cards e
+sidebar mostram) e o campo `dias` usa notação de intervalo (`"Seg/Sex"`
+= segunda a sexta) — a PI real espera nome em título e todos os dias por
+extenso, então `fillPiSheet` converte no momento de escrever, sem tocar
+no dado original: `formatNomePrograma` (título, preservando siglas como
+`TV`/`BBB` e numerais romanos como `NOVELA II`/`III`) e
+`expandDiasField`, em `weekLock.js` (reaproveita `getAllowedWeekdays`,
+que já trava dias fora do padrão no mapa).
+
+**Nome do arquivo**: `PI <identificador> - <MÊS><ANO>.xlsx`
+(`buildPiFileName` em `piXlsx.js`), ex. `PI SUPERMERCADO BARATÃO -
+SET2026.xlsx`. O identificador é o nome fantasia do cliente quando o
+CNPJ foi consultado; sem CNPJ, cai pra praça.
+
+Ver `../docs/superpowers/specs/2026-08-25-exportar-pi.md` para o
+mapeamento completo de células e o histórico das abordagens
+descartadas.
 
 ## Utils com testes (`node --test`)
 
@@ -174,6 +191,10 @@ completo e o histórico das abordagens descartadas.
 - `src/utils/piXlsx.js` — escrita cirúrgica no XML da PI (ver acima). O
   teste `piXlsx.test.js` é o que guarda o contrato: afirma que as células
   de fórmula vizinhas saem byte a byte iguais.
+- `src/utils/cnpj.js` — máscara, formatação e consulta de CNPJ
+  (`fetchCnpjData`, contra a BrasilAPI) pro dialog de dados do cliente.
+  `fetchCnpjData` é testado com `fetch` mockado, sem depender de rede
+  real.
 
 Rodar: `npm test` (usa `node --test src/**/*.test.js` — **não** use
 `node --test src` sozinho, falha com MODULE_NOT_FOUND nesse projeto).

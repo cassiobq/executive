@@ -24,6 +24,7 @@ Um vendedor escolhe programa, praça e secundagem, configura 1 a 3 cards de pre�
 | `src/components/CardPreview.jsx` | Renderização do card 9:16, escalamento de fonte, observações |
 | `src/pages/MidiaAvulsaPage.jsx` | Mídia Avulsa: formatos Card e Slide, mapa de inserções, exportar PDF e PI |
 | `src/utils/piXlsx.js` | Preenche a PI escrevendo direto no XML de dentro do `.xlsx` |
+| `src/utils/cnpj.js` | Máscara, formatação e consulta de CNPJ (BrasilAPI) pros dados de cliente da PI |
 | `public/pi-template.xlsx` | Modelo de PI em branco, servido como asset estático |
 | `src/services/sheetsService.js` | Fetch das 2 abas do Google Sheets, parse de datas/horas |
 | `src/index.css` | Design tokens, sidebar, liquid glass, tray, preview scaling |

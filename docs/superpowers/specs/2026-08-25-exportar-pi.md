@@ -304,6 +304,21 @@ resto do app.
   mês certo, `fullCalcOnLoad="1"` no `workbook.xml`, e nada de cliente
   escrito (caminho sem CNPJ).
 
+### Comissão/Bruto/Líquido: o "X" é manual, não é algo que o app controla
+
+Perto do rodapé (linhas 50-54) o template tem 3 caixinhas (`AL52`,
+`AL53`, `AL54`) e 3 valores (`BA52` Comissão, `BA53` Bruto, `BA54`
+Líquido). No modelo em branco, `AL53` já vem com "X" fixo (uma string do
+próprio template, não algo que o export escreve) e as outras duas vêm
+vazias — mas isso é só uma anotação visual pro humano que confere o
+documento: nenhuma fórmula olha pra essas caixinhas. `BA52` (Comissão)
+calcula `=(BA51*0.2)` sempre, independente do "X"; `BA53` (Bruto)
+`=(BA51)` também sempre; `BA54` (Líquido) não tem fórmula nenhuma (fica
+em branco até alguém digitar). Se o usuário quer que só um desses três
+apareça, é ele quem marca/apaga o "X" manualmente no Excel depois que a
+PI sai da Executive — confirmado com o usuário, que decidiu
+explicitamente não automatizar isso pra não mexer em fórmula.
+
 ## Limitações conhecidas
 
 - **O recálculo não é verificável localmente.** LibreOffice headless não
