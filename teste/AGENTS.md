@@ -106,8 +106,22 @@ viewport em JS — todo o resto do split desktop/mobile é CSS puro).
 ### Exportar para PI (Pedido de Inserção)
 
 Além do "Exportar PDF", o formato Slide tem **"Exportar para PI"**: pega
-o mapa montado e devolve o `.xlsx` real da emissora já preenchido
-(`handleExportPI` em `MidiaAvulsaPage.jsx`).
+o mapa montado e devolve o `.xlsx` real da emissora já preenchido.
+Clicar no botão não exporta na hora — abre o dialog **"Dados do
+cliente"** (`piClienteDialogOpen` em `MidiaAvulsaPage.jsx`), que pede um
+CNPJ opcional antes de gerar o arquivo:
+
+- **"Buscar e exportar"** consulta a BrasilAPI (`src/utils/cnpj.js` —
+  `fetchCnpjData`, pública, sem chave, CORS liberado, chamada direto do
+  navegador) e preenche os dados de cliente que a Receita Federal tiver;
+  erro (CNPJ inválido, não encontrado, falha de rede) aparece inline no
+  dialog, sem fechar nem bloquear.
+- **"Pular e exportar"** mantém o comportamento original: exporta sem
+  dados de cliente.
+
+`runExportPI(cliente)` é quem de fato gera o arquivo (o antigo
+`handleExportPI`, agora recebendo o cliente — ou `null` — como
+parâmetro).
 
 O template em branco vive em `public/pi-template.xlsx` (byte a byte igual
 ao arquivo que o usuário enviou) e é servido como asset estático. Um
@@ -118,13 +132,15 @@ Nenhuma biblioteca de planilha faz round-trip — exceljs foi tentado e
 descartado por perder partes do arquivo.
 
 **A regra que não se quebra** (definida pelo usuário, é o contrato desta
-feature): o app escreve **apenas** as células de entrada da grade, linhas
-32–47 — sigla (`A`), programa (`B`), ocorrência (`C`), desconto (`F`),
-marcas dia a dia (`H`..`AL`, dia 1 = coluna H), duração (`AY`) e valor
-unitário (`AZ`). Nada fora disso: nem praça, nem mês, nem título, nem
-totais. E **nenhuma célula de fórmula é tocada** — nem o texto da fórmula, nem o
-`<v>` com o resultado em cache. Apagar esse cache foi tentado e é o que
-quebra: numa matriz dinâmica (`<f t="array">` + `cm="1"`) o valor em
+feature): o app escreve **apenas** células de entrada — a grade de
+programas (linhas 32–47: sigla, programa, ocorrência, desconto por linha,
+marcas dia a dia, duração, valor unitário), mês de veiculação (`AH4`),
+desconto global (`BA50`), o bloco de títulos (nome + duração, `B16:B21` /
+`O16:O21`) e, só quando o CNPJ resolve, o bloco de dados de cliente
+(linhas 6–13 — ver mapeamento completo no spec). Praça (`A3`) continua
+fora. E **nenhuma célula de fórmula é tocada** — nem o texto da fórmula,
+nem o `<v>` com o resultado em cache. Apagar esse cache foi tentado e é o
+que quebra: numa matriz dinâmica (`<f t="array">` + `cm="1"`) o valor em
 cache descreve o intervalo derramado, e sem ele o Excel rebaixa a fórmula
 pra CSE (`{}` na barra) e dá `#NOME?`.
 

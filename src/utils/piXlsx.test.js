@@ -7,6 +7,10 @@ import {
     setCellNumber,
     fillPiSheet,
     forceFullCalc,
+    dateToExcelSerial,
+    MES_VEICULACAO_CELL,
+    DESCONTO_GLOBAL_CELL,
+    CLIENTE_CELLS,
 } from './piXlsx.js';
 
 test('colLetter — colunas usadas pela grade de dias', () => {
@@ -144,4 +148,93 @@ test('forceFullCalc — não é o caminho pra mexer em fórmula: só toca no cal
     const xml = '<workbook><definedNames><definedName name="a">SUM(A1)</definedName></definedNames><calcPr calcId="1"/></workbook>';
     const out = forceFullCalc(xml);
     assert.equal(out.replace(' fullCalcOnLoad="1"', ''), xml);
+});
+
+test('dateToExcelSerial — dia 1 de janeiro/2026 é o serial 46023 (default do próprio template)', () => {
+    assert.equal(dateToExcelSerial(new Date(2026, 0, 1)), 46023);
+});
+
+test('dateToExcelSerial — dia 1 de setembro/2026', () => {
+    // conferido de forma independente (dias desde 1899-12-30)
+    assert.equal(dateToExcelSerial(new Date(2026, 8, 1)), 46266);
+});
+
+test('fillPiSheet — mês de veiculação, desconto global e bloco de títulos', () => {
+    const cells = [`<c r="${MES_VEICULACAO_CELL}" s="185"/>`, `<c r="${DESCONTO_GLOBAL_CELL}" s="56"/>`];
+    for (let r = 16; r <= 21; r++) {
+        cells.push(`<c r="B${r}" s="165"/>`, `<c r="O${r}" s="78"/>`);
+    }
+    const xml = fillPiSheet(cells.join(''), {
+        descontoPercent: 20,
+        duracaoLabel: '30"',
+        duracaoSegundos: 30,
+        mesVeiculacao: new Date(2026, 8, 1),
+        titulosUsados: [{ letra: 'A', nome: 'Campanha Setembro' }, { letra: 'C', nome: null }],
+        rows: [],
+    });
+
+    assert.match(xml, new RegExp(`<c r="${MES_VEICULACAO_CELL}" s="185"><v>46266</v></c>`));
+    assert.match(xml, new RegExp(`<c r="${DESCONTO_GLOBAL_CELL}" s="56"><v>0\\.2</v></c>`));
+
+    // A (usado, com nome) -> linha 16
+    assert.match(xml, /<c r="B16" s="165" t="inlineStr"><is><t xml:space="preserve">Campanha Setembro<\/t><\/is><\/c>/);
+    assert.match(xml, /<c r="O16" s="78"><v>30<\/v><\/c>/);
+    // B (não usado) -> linha 17, continua vazia
+    assert.match(xml, /<c r="B17" s="165"\/>/);
+    assert.match(xml, /<c r="O17" s="78"\/>/);
+    // C (usado, sem nome cadastrado) -> linha 18, cai pra letra
+    assert.match(xml, /<c r="B18" s="165" t="inlineStr"><is><t xml:space="preserve">C<\/t><\/is><\/c>/);
+    assert.match(xml, /<c r="O18" s="78"><v>30<\/v><\/c>/);
+});
+
+test('fillPiSheet — sem desconto, BA50 fica vazia (BA51 trata blank como 0)', () => {
+    const xml = fillPiSheet(`<c r="${DESCONTO_GLOBAL_CELL}" s="56"/>`, {
+        descontoPercent: 0, duracaoLabel: '30"', rows: [],
+    });
+    assert.match(xml, new RegExp(`<c r="${DESCONTO_GLOBAL_CELL}" s="56"/>`));
+});
+
+test('fillPiSheet — sem mesVeiculacao, AH4 não é tocada', () => {
+    const xml = fillPiSheet(`<c r="${MES_VEICULACAO_CELL}" s="185"/>`, {
+        descontoPercent: 0, duracaoLabel: '30"', rows: [],
+    });
+    assert.match(xml, new RegExp(`<c r="${MES_VEICULACAO_CELL}" s="185"/>`));
+});
+
+test('fillPiSheet — dados de cliente, só quando informados', () => {
+    const cells = Object.values(CLIENTE_CELLS).map(ref => `<c r="${ref}" s="99"/>`).join('');
+    const cliente = {
+        nome: 'ACME LTDA', nomeFantasia: 'Acme', endereco: 'Av. Brasil, 100',
+        bairro: 'Centro', cidade: 'Rio Verde', uf: 'GO', cep: '75901-000',
+        fone: '(64) 3322-1100', cgc: '12.345.678/0001-90',
+    };
+    const out = fillPiSheet(cells, { descontoPercent: 0, duracaoLabel: '30"', rows: [], cliente });
+    for (const [field, ref] of Object.entries(CLIENTE_CELLS)) {
+        assert.match(out, new RegExp(`<c r="${ref}" s="99" t="inlineStr"><is><t xml:space="preserve">${cliente[field].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}</t></is></c>`));
+    }
+
+    const semCliente = fillPiSheet(cells, { descontoPercent: 0, duracaoLabel: '30"', rows: [] });
+    assert.equal(semCliente, cells); // cliente ausente: nenhuma das 9 células é tocada
+});
+
+test('fillPiSheet — não vaza pras células de fórmula vizinhas do bloco de títulos/cliente/mês', () => {
+    const xml = [
+        `<c r="${MES_VEICULACAO_CELL}" s="185"/>`,
+        `<c r="${DESCONTO_GLOBAL_CELL}" s="56"/>`,
+        '<c r="B16" s="165"/><c r="O16" s="78"/>',
+        '<c r="A7" s="186"/>',
+        '<c r="BA48" s="144"><f>SUM(BA32:BA47)</f><v>0</v></c>',
+        '<c r="BA51" s="50"><f>(BA48-(BA48*BA50))</f><v>0</v></c>',
+        '<c r="BA4" s="70"><f ca="1">NOW()</f><v>46204.716807638892</v></c>',
+    ].join('');
+    const out = fillPiSheet(xml, {
+        descontoPercent: 10, duracaoLabel: '30"', duracaoSegundos: 30,
+        mesVeiculacao: new Date(2026, 8, 1),
+        titulosUsados: [{ letra: 'A', nome: 'X' }],
+        cliente: { nome: 'ACME' },
+        rows: [],
+    });
+    assert.match(out, /<c r="BA48" s="144"><f>SUM\(BA32:BA47\)<\/f><v>0<\/v><\/c>/);
+    assert.match(out, /<c r="BA51" s="50"><f>\(BA48-\(BA48\*BA50\)\)<\/f><v>0<\/v><\/c>/);
+    assert.match(out, /<c r="BA4" s="70"><f ca="1">NOW\(\)<\/f><v>46204\.716807638892<\/v><\/c>/);
 });

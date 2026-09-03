@@ -7,6 +7,7 @@ import MapaInsercoesSemanal from '../components/MapaInsercoesSemanal';
 import ResumoSlidePage from '../components/ResumoSlidePage';
 import { getAllowedWeekdays, markQuantity } from '../utils/weekLock';
 import { computeTitulosUsados } from '../utils/titulos';
+import { maskCnpjInput, isValidCnpjLength, fetchCnpjData } from '../utils/cnpj';
 
 const parseNum = (val) => {
     if (!val) return 0;
@@ -119,6 +120,14 @@ export default function MidiaAvulsaPage({ onBack, active }) {
     const [isCopied, setIsCopied] = useState(false);
     const [piCopied, setPiCopied] = useState(false);
     const [isFlashing, setIsFlashing] = useState(false);
+
+    // Dialog "Dados do cliente" — passo intermediário do Exportar para PI,
+    // pra oferecer a consulta de CNPJ sem obrigar (o usuário pode pular e
+    // exportar sem esses dados, como sempre foi possível).
+    const [piClienteDialogOpen, setPiClienteDialogOpen] = useState(false);
+    const [piCnpjInput, setPiCnpjInput] = useState('');
+    const [piClienteStatus, setPiClienteStatus] = useState('idle'); // 'idle' | 'loading' | 'error'
+    const [piClienteError, setPiClienteError] = useState(null);
     const cardRef = useRef(null);
     const page1Ref = useRef(null);
     const page2Ref = useRef(null);
@@ -444,12 +453,11 @@ export default function MidiaAvulsaPage({ onBack, active }) {
     // (utils/piXlsx.js explica por que não passamos por uma biblioteca de
     // planilha): todo byte que não é uma célula de entrada continua igual ao
     // original. O usuário abre no Excel/Sheets e salva/imprime como PDF de lá.
-    // Ver docs/superpowers/specs/2026-08-25-exportar-pi-pdf.md.
-    const handleExportPI = async () => {
-        if (!canExportPI) {
-            alert('Ative só uma segundagem pra exportar a PI.');
-            return;
-        }
+    // Ver docs/superpowers/specs/2026-08-25-exportar-pi.md.
+    //
+    // `cliente` é opcional (null quando o usuário pula a consulta de CNPJ no
+    // dialog) — ver openPiClienteDialog/handleBuscarCnpjEExportar abaixo.
+    const runExportPI = async (cliente) => {
         setIsFlashing(true);
         setTimeout(() => setIsFlashing(false), 400);
         try {
@@ -465,6 +473,10 @@ export default function MidiaAvulsaPage({ onBack, active }) {
             zip.file(piXlsx.PI_SHEET_PATH, piXlsx.fillPiSheet(sheetXml, {
                 descontoPercent: piDescontoPercent,
                 duracaoLabel: piDuracaoLabel,
+                duracaoSegundos: activeSegundos,
+                mesVeiculacao: new Date(mapYear, mapMonthIndex, 1),
+                titulosUsados,
+                cliente,
                 rows: piRows,
             }));
             // Sem isto o Excel abre confiando no calcChain e nos valores em
@@ -496,6 +508,44 @@ export default function MidiaAvulsaPage({ onBack, active }) {
         } catch (err) {
             if (err?.name === 'AbortError') return;
             alert('Erro ao gerar PI. Tente novamente.');
+        }
+    };
+
+    // Clicar em "Exportar para PI" não exporta na hora — abre um passo
+    // intermediário oferecendo a consulta de CNPJ (ver runExportPI). Pular
+    // esse passo mantém o comportamento de sempre: exporta sem dados de
+    // cliente.
+    const openPiClienteDialog = () => {
+        if (!canExportPI) {
+            alert('Ative só uma segundagem pra exportar a PI.');
+            return;
+        }
+        setPiCnpjInput('');
+        setPiClienteStatus('idle');
+        setPiClienteError(null);
+        setPiClienteDialogOpen(true);
+    };
+
+    const handleExportPISemCliente = () => {
+        setPiClienteDialogOpen(false);
+        runExportPI(null);
+    };
+
+    const handleBuscarCnpjEExportar = async () => {
+        if (!isValidCnpjLength(piCnpjInput)) {
+            setPiClienteError('CNPJ precisa ter 14 dígitos.');
+            return;
+        }
+        setPiClienteStatus('loading');
+        setPiClienteError(null);
+        try {
+            const cliente = await fetchCnpjData(piCnpjInput);
+            setPiClienteStatus('idle');
+            setPiClienteDialogOpen(false);
+            await runExportPI(cliente);
+        } catch (err) {
+            setPiClienteStatus('error');
+            setPiClienteError(err.message || 'Não foi possível consultar o CNPJ.');
         }
     };
 
@@ -824,7 +874,7 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                                     <button
                                         type="button"
                                         className={`export-preview-share-btn${canExportPI ? '' : ' is-blocked'}`}
-                                        onClick={handleExportPI}
+                                        onClick={openPiClienteDialog}
                                         title={canExportPI ? 'Exportar para PI' : 'Ative só uma segundagem pra exportar a PI'}
                                     >
                                         {piCopied ? <Check size={18} /> : <FileSpreadsheet size={18} />}
@@ -883,7 +933,7 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                         {formato !== 'card' && (
                             <button
                                 className={`mobile-copy-btn${canExportPI ? '' : ' is-blocked'}`}
-                                onClick={handleExportPI}
+                                onClick={openPiClienteDialog}
                                 title={canExportPI ? 'Exportar para PI' : 'Ative só uma segundagem pra exportar a PI'}
                             >
                                 {piCopied ? <Check size={22} /> : <FileSpreadsheet size={22} />}
@@ -892,6 +942,52 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                     </div>
                 )}
             </main>
+
+            {/* Dialog "Dados do cliente" — passo intermediário do Exportar para PI. */}
+            {piClienteDialogOpen && (
+                <div
+                    className="pi-cliente-dialog-backdrop"
+                    onClick={() => piClienteStatus !== 'loading' && setPiClienteDialogOpen(false)}
+                >
+                    <div className="pi-cliente-dialog" onClick={e => e.stopPropagation()}>
+                        <h3>Dados do cliente</h3>
+                        <p>
+                            Digite o CNPJ pra preencher razão social, endereço e contato
+                            automaticamente na PI. Se preferir, pule e exporte sem esses dados.
+                        </p>
+                        <input
+                            type="text"
+                            inputMode="numeric"
+                            className="pi-cliente-dialog-input"
+                            placeholder="00.000.000/0000-00"
+                            value={piCnpjInput}
+                            onChange={e => setPiCnpjInput(maskCnpjInput(e.target.value))}
+                            onKeyDown={e => e.key === 'Enter' && handleBuscarCnpjEExportar()}
+                            disabled={piClienteStatus === 'loading'}
+                            autoFocus
+                        />
+                        {piClienteError && <p className="pi-cliente-dialog-error">{piClienteError}</p>}
+                        <div className="pi-cliente-dialog-actions">
+                            <button
+                                type="button"
+                                className="pi-cliente-dialog-btn pi-cliente-dialog-btn-secondary"
+                                onClick={handleExportPISemCliente}
+                                disabled={piClienteStatus === 'loading'}
+                            >
+                                Pular e exportar
+                            </button>
+                            <button
+                                type="button"
+                                className="pi-cliente-dialog-btn pi-cliente-dialog-btn-primary"
+                                onClick={handleBuscarCnpjEExportar}
+                                disabled={piClienteStatus === 'loading'}
+                            >
+                                {piClienteStatus === 'loading' ? 'Consultando…' : 'Buscar e exportar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Camera flash overlay */}
             {isFlashing && (

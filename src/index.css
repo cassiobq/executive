@@ -665,6 +665,106 @@ body {
   cursor: pointer;
 }
 
+/* ==============================
+   EXPORTAR PARA PI — DIALOG "DADOS DO CLIENTE"
+   Passo intermediário entre clicar em "Exportar para PI" e o arquivo sair:
+   oferece a consulta de CNPJ sem obrigar (ver openPiClienteDialog em
+   MidiaAvulsaPage.jsx). z-index acima do popup de exportação
+   (.slide-scale-wrapper.export-preview-open é 1000) pra aparecer por cima
+   dele quando acionado a partir de lá.
+   ============================== */
+.pi-cliente-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(20, 12, 36, 0.72);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+}
+
+.pi-cliente-dialog {
+  width: 100%;
+  max-width: 360px;
+  background: white;
+  border-radius: 14px;
+  padding: 1.25rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  font-family: 'Outfit', sans-serif;
+}
+
+.pi-cliente-dialog h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: var(--text-dark);
+}
+
+.pi-cliente-dialog p {
+  margin: 0 0 0.9rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #64748b;
+}
+
+.pi-cliente-dialog-input {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.pi-cliente-dialog-input:focus {
+  border-color: var(--primary);
+}
+
+.pi-cliente-dialog-error {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #dc2626;
+}
+
+.pi-cliente-dialog-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.pi-cliente-dialog-btn {
+  flex: 1;
+  padding: 0.65rem 0.5rem;
+  border-radius: 8px;
+  border: none;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.pi-cliente-dialog-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.pi-cliente-dialog-btn-secondary {
+  background: #f1f5f9;
+  color: var(--text-dark);
+}
+
+.pi-cliente-dialog-btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
 .mapa-semanal-week-nav {
   display: flex;
   align-items: center;
