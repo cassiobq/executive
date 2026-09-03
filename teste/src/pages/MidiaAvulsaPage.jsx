@@ -467,6 +467,11 @@ export default function MidiaAvulsaPage({ onBack, active }) {
                 duracaoLabel: piDuracaoLabel,
                 rows: piRows,
             }));
+            // Sem isto o Excel abre confiando no calcChain e nos valores em
+            // cache do modelo vazio, e a coluna TOTAL fica em branco até o
+            // usuário editar alguma célula.
+            const workbookXml = await zip.file(piXlsx.PI_WORKBOOK_PATH).async('string');
+            zip.file(piXlsx.PI_WORKBOOK_PATH, piXlsx.forceFullCalc(workbookXml));
 
             const fileName = `PI-${selectedPraca}-${MONTH_ABBR[mapMonthIndex]}${mapYear}.xlsx`;
             const xlsxBlob = await zip.generateAsync({

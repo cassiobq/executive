@@ -27,7 +27,7 @@ O Executive faz **exatamente** três coisas:
 E o Executive **não**:
 
 - altera fórmulas da planilha — de nenhuma forma, incluindo apagar o
-  valor em cache de uma fórmula ou marcar recálculo no `workbook.xml`;
+  valor em cache (`<v>`) de uma célula de fórmula;
 - insere, altera ou remove dados em qualquer célula que não seja uma das
   células de entrada da grade (linhas 32–47) listadas no mapeamento
   abaixo.
@@ -66,21 +66,32 @@ estilo de cada uma) e re-empacotamos. Só `xl/worksheets/sheet1.xml` muda;
 todo o resto — estilos, logo, formas, fórmulas, impressão, metadata,
 `calcChain` — sai byte a byte igual ao original.
 
-### Nada de "ajudar o Excel a recalcular"
+### O recálculo ao abrir (`fullCalcOnLoad`) é obrigatório
 
-Duas tentativas de forçar recálculo quebraram o arquivo e foram
-revertidas:
+Deixando o arquivo 100% intacto fora das células de entrada, o Excel abre
+a PI e **não calcula nada**: ele recebe um `calcChain.xml` completo e o
+`<v>0</v>` que as fórmulas tinham quando o modelo estava vazio, então
+considera a planilha já calculada. Como a aba tem `showZeros="0"`, esse
+zero aparece como **célula em branco** — a coluna TOTAL some inteira, sem
+erro nenhum. Basta o usuário digitar qualquer coisa no mapa que a cadeia
+suja e tudo volta ao normal.
 
-- `fullCalcOnLoad="1"` no `workbook.xml`;
-- apagar o `<v>` em cache das células de fórmula (e remover o
-  `calcChain.xml`).
+Por isso o export marca `fullCalcOnLoad="1"` no `<calcPr>` do
+`xl/workbook.xml`. Isso **não** é mexer em fórmula: `calcPr` é a
+configuração de cálculo do documento, e o atributo existe no OOXML
+exatamente pra dizer "recalcule ao abrir". Medido no arquivo gerado: o
+`workbook.xml` difere do template em 19 bytes — só o atributo — e o
+`calcId` original é preservado.
 
-Nos dois casos o Excel rebaixou a fórmula dinâmica de contagem de
-inserções (`_xlfn.MAP`/`_xlfn.LAMBDA`, ligada ao `xl/metadata.xml` pelo
-atributo `cm`) pra fórmula matricial antiga (CSE, aparece com `{}` na
-barra de fórmulas) e devolveu `#NOME?` na coluna inteira. A planilha
-recalcula sozinha quando o usuário edita/abre; o nosso trabalho termina
-ao entregar as entradas.
+### O que NÃO funciona: apagar o valor em cache
+
+Apagar o `<v>` das células de fórmula (e remover o `calcChain.xml`) foi
+tentado e quebra o arquivo. Numa célula de matriz dinâmica
+(`<f t="array" ref="AX32">` com `cm="1"` apontando pro `xl/metadata.xml`)
+o valor em cache é o que descreve o intervalo derramado; sem ele o Excel
+rebaixa a fórmula pra matricial antiga (CSE, aparece com `{}` na barra de
+fórmulas). É o inverso do que se quer, e além disso viola o contrato
+acima. Nenhum `<v>` é tocado.
 
 ### Formato de saída
 
@@ -143,7 +154,9 @@ estilo (`<c r="A32" s="95"/>`) — sem fórmula e sem atributo `cm`.
   estilo; valor vazio limpa a célula em vez de escrever string vazia) e
   `fillPiSheet` (aplica o mapeamento acima). Texto vai como
   `t="inlineStr"` pra não mexer no `xl/sharedStrings.xml`, que é
-  compartilhado com as outras abas.
+  compartilhado com as outras abas. Mais `forceFullCalc`, que marca o
+  recálculo ao abrir no `xl/workbook.xml` (única parte fora da aba que o
+  export toca).
 - `src/pages/MidiaAvulsaPage.jsx` — `handleExportPI` busca o template
   (`public/pi-template.xlsx`, servido via `import.meta.env.BASE_URL`),
   aplica o patch com jszip e entrega via `navigator.share` com fallback
@@ -184,12 +197,13 @@ estilo (`<c r="A32" s="95"/>`) — sem fórmula e sem atributo `cm`.
   modelo — estoura o tempo (testado até 895s) inclusive no arquivo
   original, sem nenhuma alteração nossa. Conferir números calculados
   exige abrir no Excel/Sheets.
-- **A fórmula de contagem de inserções do modelo só avalia no Excel
-  Web.** Constatado pelo usuário: no Excel desktop dele a fórmula aparece
-  como `{=SOMA(_xlfn.MAP(...))}` e retorna `#NOME?`; no Excel Web ela
-  funciona. É uma diferença de versão/capacidade do Excel (MAP e LAMBDA
-  são funções novas), presente no modelo original — não algo introduzido
-  pela exportação. Se isso incomodar na prática, a saída é o usuário
-  abrir a PI no Excel Web / Sheets, ou o modelo trocar essa fórmula por
-  uma equivalente clássica (`CONT.SE`/`SOMARPRODUTO`) — decisão dele,
-  sobre o modelo, não sobre o Executive.
+- **A fórmula de contagem de inserções exige um Excel com `MAP`/`LAMBDA`.**
+  Num Excel que não conhece essas funções ela aparece como
+  `{=SOMA(_xlfn.MAP(...))}` — com chaves, porque a matriz dinâmica é
+  rebaixada pra CSE — e devolve `#NOME?`. Isso vale pro modelo original
+  também, sem passar pela exportação; o Excel Web avalia normalmente.
+  Enquanto o arquivo não recalculava, esse `#NOME?` ficava escondido
+  atrás do zero em cache, então ele só aparece agora que o recálculo é
+  forçado. Se surgir, a saída é abrir no Excel Web/Sheets ou atualizar o
+  Excel — não é algo que o Executive introduza nem possa corrigir sem
+  alterar a fórmula do modelo.

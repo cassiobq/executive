@@ -6,6 +6,7 @@ import {
     setCellText,
     setCellNumber,
     fillPiSheet,
+    forceFullCalc,
 } from './piXlsx.js';
 
 test('colLetter — colunas usadas pela grade de dias', () => {
@@ -113,4 +114,34 @@ test('fillPiSheet — respeita o limite de 16 linhas do formulário', () => {
 
     assert.match(out, /<c r="A47" s="95" t="inlineStr">/); // 16ª linha preenchida
     assert.match(out, /<c r="A48" s="95"\/>/);             // a 17ª não invade a linha seguinte
+});
+
+test('forceFullCalc — marca o recálculo preservando o calcId do template', () => {
+    const xml = '<workbook><sheets/><calcPr calcId="191028"/></workbook>';
+    assert.equal(
+        forceFullCalc(xml),
+        '<workbook><sheets/><calcPr calcId="191028" fullCalcOnLoad="1"/></workbook>',
+    );
+});
+
+test('forceFullCalc — é idempotente', () => {
+    const xml = '<workbook><calcPr calcId="191028" fullCalcOnLoad="1"/></workbook>';
+    assert.equal(forceFullCalc(xml), xml);
+});
+
+test('forceFullCalc — cobre calcPr com filhos e workbook sem calcPr', () => {
+    assert.equal(
+        forceFullCalc('<workbook><calcPr calcId="5"><x/></calcPr></workbook>'),
+        '<workbook><calcPr calcId="5" fullCalcOnLoad="1"><x/></calcPr></workbook>',
+    );
+    assert.equal(
+        forceFullCalc('<workbook><sheets/></workbook>'),
+        '<workbook><sheets/><calcPr fullCalcOnLoad="1"/></workbook>',
+    );
+});
+
+test('forceFullCalc — não é o caminho pra mexer em fórmula: só toca no calcPr', () => {
+    const xml = '<workbook><definedNames><definedName name="a">SUM(A1)</definedName></definedNames><calcPr calcId="1"/></workbook>';
+    const out = forceFullCalc(xml);
+    assert.equal(out.replace(' fullCalcOnLoad="1"', ''), xml);
 });

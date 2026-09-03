@@ -16,6 +16,7 @@
 // rId1 -> worksheets/sheet1.xml. O template é um asset fixo nosso, versionado
 // junto do código, então esse caminho não muda sem a gente saber.
 export const PI_SHEET_PATH = 'xl/worksheets/sheet1.xml';
+export const PI_WORKBOOK_PATH = 'xl/workbook.xml';
 
 // Primeira linha de programa na grade de dias; as seguintes são 33, 34...
 export const PROGRAMA_FIRST_ROW = 32;
@@ -78,13 +79,34 @@ export function setCellNumber(xml, ref, value) {
     return writeCell(xml, ref, `<v>${Number(value)}</v>`);
 }
 
-// NÃO mexemos em célula de fórmula, de nenhuma forma. Duas tentativas de
-// "ajudar o Excel a recalcular" já quebraram o arquivo: marcar
-// `fullCalcOnLoad` no workbook e apagar o resultado em cache das fórmulas.
-// Nos dois casos a contagem de inserções (`_xlfn.MAP`/`_xlfn.LAMBDA`, ligada
-// ao xl/metadata.xml pelo atributo `cm`) foi rebaixada pra fórmula matricial
-// antiga e devolveu #NOME? na coluna inteira. A planilha sabe se calcular
-// sozinha; nosso trabalho é só entregar os dados de entrada.
+// NÃO mexemos em célula de fórmula, de nenhuma forma — nem no texto da
+// fórmula, nem no `<v>` com o resultado em cache. Apagar esse cache já foi
+// tentado e é justamente o que quebra: numa célula de matriz dinâmica
+// (`<f t="array" ref="AX32">` + `cm="1"` apontando pro xl/metadata.xml) o
+// valor em cache é o que descreve o intervalo derramado, e sem ele o Excel
+// rebaixa a fórmula pra matricial antiga (CSE).
+//
+// Só que, deixando tudo intacto, o arquivo chega ao Excel com um
+// `calcChain.xml` completo e um `<v>0</v>` de quando o modelo estava vazio:
+// da ótica dele a planilha já está calculada, então ele não recalcula, e o
+// `showZeros="0"` da aba faz esse zero aparecer como célula em branco — some
+// a coluna TOTAL inteira, sem erro nenhum. Qualquer edição do usuário suja a
+// cadeia e faz tudo voltar ao normal.
+//
+// A correção é dizer ao Excel, no nível do documento, que ele deve
+// recalcular ao abrir. `fullCalcOnLoad` é a chave do OOXML que existe
+// exatamente pra isso, e ela não é uma fórmula nem uma célula: é uma
+// configuração de cálculo do workbook. Nenhuma fórmula é tocada.
+export function forceFullCalc(workbookXml) {
+    if (/<calcPr[^>]*\bfullCalcOnLoad="1"/.test(workbookXml)) return workbookXml;
+    if (/<calcPr[^>]*\/>/.test(workbookXml)) {
+        return workbookXml.replace(/<calcPr([^>]*?)\s*\/>/, '<calcPr$1 fullCalcOnLoad="1"/>');
+    }
+    if (/<calcPr[^>]*>/.test(workbookXml)) {
+        return workbookXml.replace(/<calcPr([^>]*?)>/, '<calcPr$1 fullCalcOnLoad="1">');
+    }
+    return workbookXml.replace('</workbook>', '<calcPr fullCalcOnLoad="1"/></workbook>');
+}
 
 // Preenche APENAS as células de entrada da grade (linhas 32-47): sigla,
 // programa, ocorrência, desconto, marcações dia a dia, duração e valor

@@ -122,17 +122,24 @@ feature): o app escreve **apenas** as células de entrada da grade, linhas
 32–47 — sigla (`A`), programa (`B`), ocorrência (`C`), desconto (`F`),
 marcas dia a dia (`H`..`AL`, dia 1 = coluna H), duração (`AY`) e valor
 unitário (`AZ`). Nada fora disso: nem praça, nem mês, nem título, nem
-totais. E **nenhuma fórmula é tocada de forma alguma** — nem apagando o
-`<v>` em cache, nem marcando `fullCalcOnLoad` no `workbook.xml`. As duas
-tentativas de "ajudar o Excel a recalcular" rebaixaram a fórmula dinâmica
-de contagem de inserções (`_xlfn.MAP`/`_xlfn.LAMBDA`) pra matricial
-antiga e produziram `#NOME?` na coluna inteira. A planilha calcula o
-resto sozinha.
+totais. E **nenhuma célula de fórmula é tocada** — nem o texto da fórmula, nem o
+`<v>` com o resultado em cache. Apagar esse cache foi tentado e é o que
+quebra: numa matriz dinâmica (`<f t="array">` + `cm="1"`) o valor em
+cache descreve o intervalo derramado, e sem ele o Excel rebaixa a fórmula
+pra CSE (`{}` na barra) e dá `#NOME?`.
 
-Detalhe conhecido, **do modelo e não do nosso código**: essa fórmula de
-contagem só avalia no **Excel Web**; no Excel desktop do usuário ela
-aparece como `{=SOMA(_xlfn.MAP(...))}` e dá `#NOME?` — inclusive no
-arquivo original, sem passar pela exportação.
+A **única** coisa que o export toca fora da aba é o `<calcPr>` do
+`xl/workbook.xml`, onde marca `fullCalcOnLoad="1"` (helper
+`forceFullCalc`). Sem isso o Excel abre confiando no `calcChain` e nos
+zeros em cache do modelo vazio e **não calcula nada** — e como a aba tem
+`showZeros="0"`, a coluna TOTAL aparece vazia, sem erro; qualquer edição
+do usuário destrava. `calcPr` é configuração de cálculo do documento, não
+uma fórmula.
+
+Detalhe conhecido, **do modelo e não do nosso código**: a contagem usa
+`MAP`/`LAMBDA`, que Excel antigo não conhece — lá ela vira
+`{=SOMA(_xlfn.MAP(...))}` com `#NOME?`, inclusive no arquivo original.
+Excel Web avalia normal.
 
 O botão fica **bloqueado** com mais de uma segundagem ativa (é ela que
 define duração/valor do documento inteiro); usa a classe `is-blocked` em
