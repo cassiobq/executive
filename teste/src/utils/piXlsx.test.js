@@ -9,6 +9,7 @@ import {
     forceFullCalc,
     dateToExcelSerial,
     formatNomePrograma,
+    buildPiFileName,
     MES_VEICULACAO_CELL,
     DESCONTO_GLOBAL_CELL,
     CLIENTE_CELLS,
@@ -283,4 +284,25 @@ test('fillPiSheet — OCORRÊNCIA expande o intervalo de dias, PROGRAMA sai em t
     });
     assert.match(out, /<c r="B32" s="96" t="inlineStr"><is><t xml:space="preserve">Bom Dia Goiás<\/t><\/is><\/c>/);
     assert.match(out, /<c r="C32" s="97" t="inlineStr"><is><t xml:space="preserve">Seg\/Ter\/Qua\/Qui\/Sex<\/t><\/is><\/c>/);
+});
+
+test('buildPiFileName — com nome fantasia (CNPJ consultado)', () => {
+    assert.equal(
+        buildPiFileName({ nomeFantasia: 'Supermercado Baratão', pracaLabel: 'RIO VERDE', monthIndex: 8, year: 2026 }),
+        'PI SUPERMERCADO BARATÃO - SET2026.xlsx',
+    );
+});
+
+test('buildPiFileName — sem nome fantasia, cai pra praça', () => {
+    assert.equal(
+        buildPiFileName({ nomeFantasia: null, pracaLabel: 'RIO VERDE', monthIndex: 0, year: 2027 }),
+        'PI RIO VERDE - JAN2027.xlsx',
+    );
+});
+
+test('buildPiFileName — tira caractere inválido de nome de arquivo', () => {
+    assert.equal(
+        buildPiFileName({ nomeFantasia: 'Casas & Cia / Filial', pracaLabel: 'RIO VERDE', monthIndex: 11, year: 2026 }),
+        'PI CASAS & CIA FILIAL - DEZ2026.xlsx',
+    );
 });

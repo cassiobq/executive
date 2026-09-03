@@ -104,6 +104,13 @@ planilha (Excel/LibreOffice) rodando em servidor — este app é 100%
 estático, sem backend, e adicionar essa infraestrutura foi considerado
 desproporcional.
 
+**Nome do arquivo**: `PI <identificador> - <MÊS><ANO>.xlsx`, ex. `PI
+SUPERMERCADO BARATÃO - SET2026.xlsx` (`buildPiFileName` em
+`piXlsx.js`). O identificador é o nome fantasia do cliente — só existe
+quando o CNPJ foi consultado com sucesso; sem CNPJ (caminho "Pular e
+exportar"), cai pra praça, mantendo o mesmo padrão em vez de voltar pro
+esquema antigo (`PI-praca-mesano.xlsx`).
+
 ### Demais decisões
 
 - **Segundagem:** o botão fica **bloqueado** sempre que mais de uma

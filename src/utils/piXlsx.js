@@ -112,6 +112,22 @@ export function formatNomePrograma(programa) {
     });
 }
 
+const MESES_ABREV_ARQUIVO = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+
+// Nome do arquivo exportado: "PI <identificador> - <MÊS><ANO>", ex.
+// "PI SUPERMERCADO BARATÃO - SET2026.xlsx". O identificador é o nome
+// fantasia do cliente (só existe quando o CNPJ foi consultado); sem CNPJ,
+// cai pra praça — mantém o mesmo padrão de nome em vez de voltar pro
+// esquema antigo.
+export function buildPiFileName({ nomeFantasia, pracaLabel, monthIndex, year }) {
+    const identificador = String(nomeFantasia || pracaLabel || '')
+        .toUpperCase()
+        .replace(/[\\/:*?"<>|]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    return `PI ${identificador} - ${MESES_ABREV_ARQUIVO[monthIndex]}${year}.xlsx`;
+}
+
 export function escapeXml(value) {
     return String(value)
         .replace(/&/g, '&amp;')

@@ -39,8 +39,6 @@ const MONTH_NAMES = [
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
-const MONTH_ABBR = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-
 const getNextMonths = () => {
     const currentMonthIdx = new Date().getMonth();
     return Array.from({ length: 4 }).map((_, i) => {
@@ -485,7 +483,12 @@ export default function MidiaAvulsaPage({ onBack, active }) {
             const workbookXml = await zip.file(piXlsx.PI_WORKBOOK_PATH).async('string');
             zip.file(piXlsx.PI_WORKBOOK_PATH, piXlsx.forceFullCalc(workbookXml));
 
-            const fileName = `PI-${selectedPraca}-${MONTH_ABBR[mapMonthIndex]}${mapYear}.xlsx`;
+            const fileName = piXlsx.buildPiFileName({
+                nomeFantasia: cliente?.nomeFantasia,
+                pracaLabel,
+                monthIndex: mapMonthIndex,
+                year: mapYear,
+            });
             const xlsxBlob = await zip.generateAsync({
                 type: 'blob',
                 mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
